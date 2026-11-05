@@ -148,6 +148,45 @@ footer{margin-top:28px;color:var(--text-3);font-size:12.5px}
 footer code{font-size:12px}
 .empty{color:var(--text-3);font-size:13px;padding:18px 0;text-align:center}
 .hm{display:block;width:100%}
+/* coach */
+.advice{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.card h3+.advice,.card .hint+.advice{border-top:0}
+.advice .badge{margin-top:2px;width:18px;height:18px;font-size:11px;font-weight:700}
+.at{font-weight:600;font-size:14.5px}.ad{font-size:14px;color:var(--text-2)}.aw{font-size:12.5px;color:var(--text-3);margin-top:2px}
+.pill{color:#fff;font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.next-t{font-size:20px;font-weight:650;letter-spacing:-.01em;margin-top:6px}
+ul.why{margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--text-2)}
+.ask{display:flex;align-items:center;justify-content:space-between;gap:12px}
+/* klikbare tegels */
+button.tile{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;display:block;-webkit-tap-highlight-color:transparent;transition:border-color .15s, transform .1s}
+button.tile:hover{border-color:var(--text-3)}
+button.tile:active{transform:scale(.985)}
+button.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile .lbl{display:flex;justify-content:space-between;gap:6px}
+.chev{color:var(--text-3);font-size:15px;line-height:1}
+/* detailpaneel */
+#sheetWrap{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center}
+#sheetWrap .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);animation:fade .18s ease}
+.sheet{position:relative;background:var(--bg);width:100%;max-width:760px;max-height:92vh;border-radius:20px 20px 0 0;
+  display:flex;flex-direction:column;animation:up .22s ease;padding-bottom:env(safe-area-inset-bottom)}
+@media(min-width:760px){#sheetWrap{align-items:center}.sheet{border-radius:20px;max-height:88vh}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.sheet-head h2{font-size:19px;margin:0;letter-spacing:-.01em}
+.sheet-head .grab{position:absolute;top:6px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line)}
+.sheet-body{overflow:auto;padding:12px 16px 24px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.sheet-body .card{margin-bottom:12px}
+.sheet-body h4{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin:18px 2px 8px;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat .k{font-size:12px;color:var(--text-2)}.stat .v{font-size:20px;font-weight:650;margin-top:2px}.stat .s{font-size:11.5px;color:var(--text-3)}
+.info{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;color:var(--text-2)}
+.info b{color:var(--text)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sheet-body .hint{font-size:12.5px;color:var(--text-3);line-height:1.45}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet,#sheetWrap .backdrop{animation:none}}
 </style>
 </head>
 <body>
@@ -185,11 +224,18 @@ footer code{font-size:12px}
       <button data-r="7">7 d</button><button data-r="30">30 d</button><button data-r="90">90 d</button><button data-r="365">1 jaar</button>
     </div></div>
 
+    <h2 class="sec">Coach</h2>
+    <div class="grid" id="coach"></div>
+    <div class="grid" style="margin-top:12px"><div class="card"><div class="ask"><div><h3>Vraag Claude</h3><div class="hint" style="margin:2px 0 0">Kopieer een samenvatting van je cijfers voor een uitgebreidere analyse in een gesprek</div></div>
+      <button class="btn" type="button" data-detail="c:claude" style="width:auto;padding:10px 16px;white-space:nowrap">Samenvatting</button></div></div></div>
+
     <section id="raceSec">
     <h2 class="sec" id="raceTitle">Marathon</h2>
     <div class="grid">
       <div class="card"><div class="card-head"><h3 id="raceName"></h3><span class="big num" id="raceCount"></span></div>
         <div class="hint" id="raceSub"></div><div class="tiles" id="raceTiles" style="margin-top:8px"></div></div>
+      <div class="card c6" id="ready"></div>
+      <div class="card c6" id="nextRun"></div>
       <div class="card c8"><div class="card-head"><h3>Kilometers per week</h3><span class="big num" id="runKmAvg"></span></div>
         <div class="hint">Alle loopactiviteiten, laatste 20 weken. Blauw = uit je Garmin-plan, grijs = vrij gelopen</div><div class="legend" id="runLegend"></div><div class="chart" id="chRunKm"></div></div>
       <div class="card c4"><div class="card-head"><h3>Langste loop per week</h3><span class="big num" id="longMax"></span></div>
@@ -249,6 +295,13 @@ footer code{font-size:12px}
     </div>
 
     <footer id="foot"></footer>
+  </div>
+</div>
+<div id="sheetWrap" hidden>
+  <div class="backdrop" id="sheetBackdrop"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head"><span class="grab" aria-hidden="true"></span><h2 id="sheetTitle"></h2><button class="icon-btn" id="sheetClose" aria-label="Sluiten">✕</button></div>
+    <div class="sheet-body" id="sheetBody"></div>
   </div>
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
@@ -374,13 +427,13 @@ function linePath(f, vals){
   vals.forEach((v,i)=>{ if(v==null){pen=false;return} d+=(pen?'L':'M')+f.x(i).toFixed(1)+' '+f.y(v).toFixed(1); pen=true; });
   return d;
 }
-function lineChart(container, {xs, series, band, h, unit='', dec=0, yPad=0.08}){
+function lineChart(container, {xs, series, band, bandColor, h, unit='', dec=0, yPad=0.08}){
   const all = series.flatMap(s=>s.vals).filter(v=>v!=null);
   if(band) all.push(band[0],band[1]);
   if(!all.length){container.innerHTML='<div class="empty">Nog geen data</div>';return}
   let lo=Math.min(...all), hi=Math.max(...all); const p=(hi-lo||1)*yPad; lo-=p; hi+=p;
   const f = frame(container,{xs,yMin:lo,yMax:hi,h});
-  if(band){ el('rect',{x:f.m.l,width:f.iw,y:f.y(band[1]),height:Math.max(0,f.y(band[0])-f.y(band[1])),fill:series[0].color,opacity:.10},f.svg); }
+  if(band){ el('rect',{x:f.m.l,width:f.iw,y:f.y(band[1]),height:Math.max(0,f.y(band[0])-f.y(band[1])),fill:bandColor||series[0].color,opacity:.12},f.svg); }
   series.forEach(s=>{
     if(s.avg){ const a=mean(s.vals); if(a!=null) el('line',{x1:f.m.l,x2:f.W-f.m.r,y1:f.y(a),y2:f.y(a),stroke:s.color,'stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},f.svg) }
     el('path',{d:linePath(f,s.vals),fill:'none',stroke:s.color,'stroke-width':s.w||2,'stroke-linejoin':'round','stroke-linecap':'round',opacity:s.op||1},f.svg);
@@ -477,6 +530,7 @@ function renderTiles(){
       const prev = DATA.days[last.i-1]; if(prev && prev[df.k]!=null) last={v:prev[df.k],d:prev.d,i:last.i-1};
     }
     if(!last) return `<div class="tile"><div class="lbl">${df.l}</div><div class="val">–</div><div class="when">geen data</div></div>`;
+    const chev = '<span class="chev" aria-hidden="true">›</span>';
     const base = baseline(df.k, last.i);
     let delta='';
     if(base!=null && base!==0){
@@ -487,8 +541,8 @@ function renderTiles(){
     }
     const spark = sparkline(DATA.days.slice(-14).map(d=>d[df.k]), css(df.c));
     const when = df.when && last.d>=addDays(isoD(new Date()),-1) ? df.when : whenLabel(last.d);
-    return `<div class="tile" title="Normaal = mediaan van de 30 dagen ervoor: ${fmt(base, df.k==='hrv'||df.k==='rhr'?0:0)}${df.u}">
-      <div class="lbl">${df.l}</div><div class="val num">${fmt(last.v)}<small>${df.u.trim()}</small></div>${delta}${spark}<div class="when">${when} · normaal ${fmt(base)}</div></div>`;
+    return `<button type="button" class="tile" data-detail="m:${df.k}" aria-label="${df.l}: details">
+      <div class="lbl"><span>${df.l}</span>${chev}</div><div class="val num">${fmt(last.v)}<small>${df.u.trim()}</small></div>${delta}${spark}<div class="when">${when} · normaal ${fmt(base)}</div></button>`;
   });
   $('#tiles').innerHTML = out.join('');
 }
@@ -720,7 +774,7 @@ function renderRace(){
     {l:'Tempo-/drempellopen', v:paceStr(hp), u:'/km', html:cmp(hp), s: hard.length? hard.length+' sessies (8 w)':'geen in 8 weken'},
     {l:'Uit je plan (8 w)', v: planShare==null?'–':planShare+'%', u:'', s: hasPlan? recent.filter(a=>a.plan).length+' van '+recent.length+' lopen':'Garmin geeft (nog) geen plan-koppeling door'},
   ];
-  $('#raceTiles').innerHTML = tiles.map(x=>`<div class="tile"><div class="lbl">${esc(x.l)}</div><div class="val num">${esc(x.v)}<small>${esc(x.u)}</small></div>${x.html||''}<div class="when">${esc(x.s)}</div></div>`).join('');
+  $('#raceTiles').innerHTML = tiles.map((x,i)=>`<button type="button" class="tile" data-detail="r:${i}" aria-label="${esc(x.l)}: details"><div class="lbl"><span>${esc(x.l)}</span><span class="chev" aria-hidden="true">›</span></div><div class="val num">${esc(x.v)}<small>${esc(x.u)}</small></div>${x.html||''}<div class="when">${esc(x.s)}</div></button>`).join('');
 
   // trainingsmix
   const mix={}; runs.filter(a=>a.start.slice(0,10)>=addDays(t,-28)).forEach(a=>{const n=teName(a.teLabel); mix[n]=(mix[n]||0)+(a.durMin||0)});
@@ -745,11 +799,403 @@ function renderRace(){
     <div class="rt num">${fmt(a.distKm,1)} km · ${paceStr(p)}/km<br>${a.avgHr?'♥ '+a.avgHr+' · ':''}${p?(p<=goalPace?'≤ doel':'+'+fmt((p-goalPace)*60,0)+' s'):''}</div></li>` }).join('') || '<li class="empty">Nog geen lopen</li>';
 }
 
+/* ============================================================ detailpaneel */
+const METRIC = {
+  sleepScore:{l:'Slaapscore',u:'',better:+1,c:'--s1',dec:0,
+    info:'Garmin combineert slaapduur, de verdeling over diepe, lichte en REM-slaap, onrust en stress tijdens de nacht tot een score van 0 tot 100. Garmins eigen indeling: <b>90+ uitstekend</b>, 80–89 goed, 60–79 redelijk, onder 60 matig.'},
+  hrv:{l:'HRV',u:' ms',better:+1,c:'--s3',dec:0,
+    info:'Hartslagvariabiliteit: hoeveel de tijd tussen twee hartslagen varieert, gemeten tijdens je slaap. <b>Hoger dan je eigen normaal</b> wijst meestal op goed herstel. Lager kan komen door zware training, alcohol, ziekte, stress of een korte nacht. Vergelijk alleen met jezelf: absolute waarden verschillen sterk tussen mensen.'},
+  rhr:{l:'Rusthartslag',u:' bpm',better:-1,c:'--s2',dec:0,
+    info:'Je laagste hartslag in rust over de dag. <b>Een paar slagen boven je normaal</b> kan wijzen op vermoeidheid, beginnende ziekte, alcohol of warmte. Op lange termijn daalt je rusthartslag vaak als je conditie verbetert.'},
+  bbHigh:{l:'Body Battery',u:'',better:+1,c:'--s1',dec:0,
+    info:'Body Battery (0–100) schat je energiereserve op basis van HRV, stress, slaap en activiteit. <b>De hoogste stand van de dag</b> is meestal die na het opstaan, en toont dus hoe goed je nacht je opgeladen heeft.'},
+  stressAvg:{l:'Stress',u:'',better:-1,c:'--s7',dec:0,
+    info:'Garmin leidt stress af uit je HRV wanneer je stilzit. Beweging zelf telt niet mee. Garmins indeling: <b>0–25 rust</b>, 26–50 laag, 51–75 gemiddeld, 76–100 hoog. Ook na een zware training of bij ziekte kan je stress hoger liggen.'},
+  steps:{l:'Stappen',u:'',better:+1,c:'--s3',dec:0,
+    info:'Je totale aantal stappen per dag, vergeleken met je dagdoel in Garmin Connect. Garmin past dat doel automatisch aan op basis van je recente dagen, tenzij je het zelf vastgezet hebt.'},
+};
+const quant = (a,p)=>{const v=a.filter(x=>x!=null).sort((x,y)=>x-y); if(!v.length) return null; const i=(v.length-1)*p, lo=Math.floor(i); return v[lo]+(v[Math.min(lo+1,v.length-1)]-v[lo])*(i-lo)};
+const statBox = (k,v,s='') => `<div class="stat"><div class="k">${esc(k)}</div><div class="v num">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+const trainedOn = () => { const m={}; DATA.activities.forEach(a=>{ if((a.durMin||0)>=20){const d=a.start.slice(0,10); m[d]=(m[d]||0)+a.durMin} }); return m };
+function cmpBlock(title, aLbl, aVals, bLbl, bVals, M){
+  const a=mean(aVals), b=mean(bVals);
+  if(aVals.length<4||bVals.length<4) return '';
+  const diff=a-b, good=diff*M.better>0, sdv=sd([...aVals,...bVals])||1, clear=Math.abs(diff)>=0.3*sdv;
+  return `<h4>${esc(title)}</h4><div class="cmp">${statBox(aLbl, fmt(a,M.dec)+esc(M.u), aVals.length+' dagen')}${statBox(bLbl, fmt(b,M.dec)+esc(M.u), bVals.length+' dagen')}</div>
+    <div class="hint" style="margin-top:6px">Verschil: <b class="num">${diff>0?'+':''}${fmt(diff,1)}${esc(M.u)}</b> ${!clear?'(te klein om iets over te zeggen)':good?'(gunstiger)':'(minder gunstig)'}. Dit is een samenhang in je eigen data, geen bewezen oorzaak.</div>`;
+}
+
+function detailMetric(k){
+  const M=METRIC[k]; const t=isoD(new Date());
+  const days=sliceN(90), vals=days.map(d=>d[k]??null);
+  const n=v=>fmt(v,M.dec)+M.u;
+  const last=lastWith(k), base=last?baseline(k,last.i):null;
+  const prev30=DATA.days.slice(Math.max(0,(last?last.i:DATA.days.length)-30),(last?last.i:DATA.days.length)).map(d=>d[k]);
+  const lo=quant(prev30,.25), hi=quant(prev30,.75);
+  const roll=vals.map((_,i)=>{const w=vals.slice(Math.max(0,i-6),i+1).filter(x=>x!=null); return w.length>=3?mean(w):null});
+  const withIdx=days.map((d,i)=>({d:d.d,v:vals[i]})).filter(x=>x.v!=null);
+  const mn=withIdx.reduce((a,c)=>!a||c.v<a.v?c:a,null), mx=withIdx.reduce((a,c)=>!a||c.v>a.v?c:a,null);
+  const m30=mean(vals.slice(-30)), mp30=mean(vals.slice(-60,-30)), tr=m30!=null&&mp30!=null?m30-mp30:null;
+  let h=`<div class="info">${M.info}</div>
+  <h4>Laatste 90 dagen</h4><div class="card" style="padding:12px"><div class="legend"><span><i class="ln" style="background:${css('--text-3')}"></i>per dag</span><span><i class="ln" style="background:${css(M.c)}"></i>gemiddelde van 7 dagen</span>${lo!=null?`<span><i style="background:${css(M.c)};opacity:.18"></i>jouw normale zone</span>`:''}</div><div class="chart" id="dChart"></div></div>
+  <div class="stats">
+    ${statBox('Laatste meting', last?n(last.v):'–', last?whenLabel(last.d):'')}
+    ${statBox('Gemiddelde 7 dagen', n(mean(vals.slice(-7))))}
+    ${statBox('Normaal', n(base), lo!=null?'zone '+fmt(lo,M.dec)+'–'+fmt(hi,M.dec)+M.u:'mediaan van 30 dagen')}
+    ${statBox('Laagste (90 d)', mn?n(mn.v):'–', mn?dLong(mn.d):'')}
+    ${statBox('Hoogste (90 d)', mx?n(mx.v):'–', mx?dLong(mx.d):'')}
+    ${statBox('Trend', tr==null?'–':(tr>0?'+':'')+fmt(tr,1)+M.u, tr==null?'':'laatste 30 d t.o.v. de 30 d ervoor · '+(Math.abs(tr)<(Math.abs(mp30)*0.02)?'stabiel':tr*M.better>0?'gunstig':'ongunstig'))}
+  </div>`;
+  // weekdag
+  const wd=[1,2,3,4,5,6,0].map(i=>({l:['zo','ma','di','wo','do','vr','za'][i], m:mean(days.filter(d=>parseD(d.d).getDay()===i).map(d=>d[k]))}));
+  if(wd.some(w=>w.m!=null)){ const vs=wd.map(w=>w.m).filter(x=>x!=null), lo2=Math.min(...vs), hi2=Math.max(...vs);
+    h+=`<h4>Per weekdag (90 d)</h4><div class="card" style="padding:12px">`+wd.map(w=>`<div class="hbar"><span>${w.l}</span><div class="track"><div class="fill" style="width:${w.m==null?0:(15+85*(w.m-lo2)/((hi2-lo2)||1))}%;background:${css(M.c)}"></div></div><span class="n num">${fmt(w.m,M.dec)}</span></div>`).join('')+`<div class="hint" style="margin-top:6px">Balklengte toont het verschil tussen de dagen. Slaap, HRV en Body Battery horen bij de nacht vóór die dag.</div></div>`; }
+  // training vs rust
+  const tr2=trainedOn(); const sameDay = k==='steps'||k==='stressAvg';
+  const A=[],B=[]; days.forEach(d=>{ if(d[k]==null) return; const ref=sameDay?d.d:addDays(d.d,-1); (tr2[ref]?A:B).push(d[k]) });
+  h+=cmpBlock(sameDay?'Trainingsdag vs. rustdag':'Na een trainingsdag vs. na een rustdag', sameDay?'Op trainingsdagen':'Na training', A, sameDay?'Op rustdagen':'Na rustdag', B, M);
+  // slaapduur
+  if(k!=='sleepScore'&&k!=='steps'){ const S=[],L=[]; days.forEach(d=>{ if(d[k]==null||d.sleepSec==null) return; (d.sleepSec>=7*3600?S:L).push(d[k]) });
+    h+=cmpBlock('Na 7+ uur slaap vs. korter','7 u of meer',S,'Minder dan 7 u',L,M); }
+  if(k==='sleepScore'){ const E=[],La=[]; days.forEach(d=>{ if(d.sleepScore==null||!d.bedtime) return; const [hh,mm]=d.bedtime.split(':').map(Number); let v=hh*60+mm; if(v<12*60) v+=1440; (v<=23*60+30?E:La).push(d.sleepScore) });
+    h+=cmpBlock('Vroeg vs. laat in bed','Voor 23:30',E,'Na 23:30',La,M); }
+  // tabel
+  h+=`<details class="table"><summary>Alle dagen als tabel</summary><div class="tablewrap"><table><thead><tr><th>Dag</th><th>${esc(M.l)}</th><th>t.o.v. normaal</th></tr></thead><tbody>${
+    days.slice().reverse().filter(d=>d[k]!=null).map(d=>`<tr><td>${dLong(d.d)}</td><td>${n(d[k])}</td><td>${base!=null?(d[k]-base>0?'+':'')+fmt(d[k]-base,1):''}</td></tr>`).join('')}</tbody></table></div></details>`;
+  return {title:M.l, html:h, after:()=>lineChart($('#dChart'),{xs:xsOf(days),band:lo!=null?[lo,hi]:null,bandColor:css(M.c),unit:M.u,dec:M.dec,
+    series:[{label:'Per dag',vals,color:css('--text-3'),w:1.2,noDots:true,dec:M.dec},{label:'Gem. 7 d',vals:roll,color:css(M.c),noDots:true,dec:1}]})};
+}
+
+function detailRace(i){
+  const runs=DATA.activities.filter(isRun), t=isoD(new Date()), goalPace=RACE.goalSec/60/RACE.distKm, since=addDays(t,-56);
+  const recent=runs.filter(a=>a.start.slice(0,10)>=since);
+  const runRow = a=>{const p=runPace(a); return `<tr><td>${dLong(a.start.slice(0,10))}</td><td>${fmt(a.distKm,1)} km</td><td>${paceStr(p)}</td><td>${a.avgHr||'–'}</td><td>${p?(p<=goalPace?'≤ doel':'+'+fmt((p-goalPace)*60,0)+' s'):''}</td></tr>`};
+  const runTable = (list, open)=>`<details class="table"${open?' open':''}><summary>${list.length} lopen</summary><div class="tablewrap"><table><thead><tr><th>Dag</th><th>Afstand</th><th>Tempo</th><th>♥</th><th>vs. doel</th></tr></thead><tbody>${list.map(runRow).join('')}</tbody></table></div></details>`;
+  const paceChart = (list, color) => ()=>{ const l=list.slice().reverse(); if(l.length<2){$('#dChart').innerHTML='<div class="empty">Te weinig lopen</div>';return}
+    lineChart($('#dChart'),{xs:l.map(a=>({lbl:dLabel(a.start.slice(0,10)),tip:dLong(a.start.slice(0,10))+' · '+fmt(a.distKm,1)+' km'})),dec:2,
+      series:[{label:'Tempo (min/km)',vals:l.map(runPace),color,dec:2},{label:'Doeltempo',vals:l.map(()=>goalPace),color:css('--text-2'),w:1.2,noDots:true,dec:2}]}) };
+  const chartCard = (legend)=>`<div class="card" style="padding:12px">${legend||''}<div class="chart" id="dChart"></div></div>`;
+  switch(i){
+    case 0: { // doeltempo
+      const split=[5,10,15,20,21.0975,25,30,35,40,42.195];
+      const hms=sec=>{sec=Math.round(sec);const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(s).padStart(2,'0')};
+      const goals=[3.5,3.75,4,4.25].map(hh=>({hh,p:hh*60/RACE.distKm}));
+      return {title:'Doeltempo', html:`<div class="info">Voor <b>sub ${Math.floor(RACE.goalSec/3600)}u</b> loop je gemiddeld <b>${paceStr(goalPace)} /km</b>. Veel lopers mikken in de eerste helft een paar seconden per km trager, zodat ze reserve hebben voor de laatste 10 km.</div>
+        <h4>Doorkomsttijden bij ${paceStr(goalPace)} /km</h4><div class="card" style="padding:12px"><table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums">${split.map(km=>`<tr><td style="padding:5px 0;border-bottom:1px solid var(--line)">${km===21.0975?'Halve marathon':km===42.195?'Finish':km+' km'}</td><td style="text-align:right;border-bottom:1px solid var(--line)"><b>${hms(km*goalPace*60)}</b></td></tr>`).join('')}</table></div>
+        <h4>Andere doeltijden</h4><div class="stats">${goals.map(g=>statBox(hms(g.hh*3600),paceStr(g.p)+' /km', g.hh*3600===RACE.goalSec?'jouw doel':'')).join('')}</div>`};
+    }
+    case 1: { // km per week
+      const wk=[]; const ws=weekKey(t); for(let j=19;j>=0;j--) wk.push(addDays(ws,-7*j));
+      const rows=wk.map(k=>{const r=runs.filter(a=>weekKey(a.start.slice(0,10))===k); return {k,km:r.reduce((s,a)=>s+(a.distKm||0),0),n:r.length,long:Math.max(0,...r.map(a=>a.distKm||0))}});
+      return {title:'Kilometers per week', html:`<div class="info">Je weekvolume is de basis van je marathonvoorbereiding. Een vaak gebruikte vuistregel is om het volume met hooguit zo'n 10% per week op te bouwen, met om de 3 à 4 weken een lichtere week. Vergelijk dit met wat je plan voorschrijft.</div>
+        <h4>Per week</h4><div class="card" style="padding:12px"><div class="tablewrap" style="max-height:none"><table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13.5px"><thead><tr><th style="text-align:left">Week van</th><th style="text-align:right">km</th><th style="text-align:right">t.o.v. vorige</th><th style="text-align:right">lopen</th><th style="text-align:right">langste</th></tr></thead><tbody>${
+        rows.slice().reverse().map((r,j,arr)=>{const pv=arr[j+1]; const ch=pv&&pv.km>0?(r.km-pv.km)/pv.km*100:null; return `<tr><td style="padding:5px 0;border-bottom:1px solid var(--line)">${dLabel(r.k)}${r.k===weekKey(t)?' (bezig)':''}</td><td style="text-align:right;border-bottom:1px solid var(--line)"><b>${fmt(r.km,1)}</b></td><td style="text-align:right;border-bottom:1px solid var(--line);color:var(--text-2)">${ch==null?'':(ch>0?'+':'')+fmt(ch)+'%'}</td><td style="text-align:right;border-bottom:1px solid var(--line)">${r.n}</td><td style="text-align:right;border-bottom:1px solid var(--line)">${r.long?fmt(r.long,1):''}</td></tr>`}).join('')}</tbody></table></div></div>`};
+    }
+    case 2: { // lange duurloop
+      const longs=runs.filter(a=>(a.distKm||0)>=16);
+      return {title:'Lange duurlopen', html:`<div class="info">De lange duurloop went je lichaam aan uren op de been en aan vetverbranding. In de meeste plannen voor sub 4u loopt die op tot ongeveer 30 à 32 km, een paar weken voor de wedstrijd. Hieronder staan al je lopen van 16 km of meer.</div>
+        <h4>Afstand per lange loop</h4><div class="card" style="padding:12px"><div class="chart" id="dChart"></div></div><h4>Overzicht</h4>${runTable(longs.slice(0,40),true)}`,
+        after:()=>{const l=longs.slice(0,40).reverse(); if(l.length<2){$('#dChart').innerHTML='<div class="empty">Nog te weinig lange lopen</div>';return}
+          barChart($('#dChart'),{xs:l.map(a=>({lbl:dLabel(a.start.slice(0,10)),tip:dLong(a.start.slice(0,10)),name:'Afstand'})),vals:l.map(a=>a.distKm),color:css('--s2'),unit:' km',dec:1,
+            extra:j=>row('Tempo',paceStr(runPace(l[j]))+' /km')+(l[j].avgHr?row('Hartslag',l[j].avgHr+' bpm'):'')})}};
+    }
+    case 3: { // tempo lange lopen
+      const longs=runs.filter(a=>(a.distKm||0)>=16).slice(0,30);
+      return {title:'Tempo van je lange lopen', html:`<div class="info">Lange duurlopen loop je meestal bewust <b>trager dan je wedstrijdtempo</b>, vaak 30 à 60 seconden per km. Komt je tempo dichter bij je doeltempo terwijl je hartslag gelijk blijft, dan vooruitgang. Sommige plannen voegen het laatste stuk op wedstrijdtempo toe.</div>
+        <h4>Tempo per lange loop</h4>${chartCard()}<h4>Overzicht</h4>${runTable(longs,true)}`, after:paceChart(longs, css('--s2'))};
+    }
+    case 4: { // tempo/drempel
+      const hard=runs.filter(a=>['TEMPO','LACTATE_THRESHOLD','THRESHOLD','VO2MAX'].includes((a.teLabel||'').toUpperCase())).slice(0,30);
+      return {title:'Tempo- en drempellopen', html:`<div class="info">Dit zijn de lopen die Garmin als <b>tempo, drempel of VO2max</b> labelt. Het gemiddelde tempo is inclusief opwarming en uitlopen, dus de snelle blokken zelf lagen sneller. Liggen die rond of onder je doeltempo, dan is je wedstrijdtempo voor je lichaam goed haalbaar.</div>
+        <h4>Gemiddeld tempo per sessie</h4>${chartCard()}<h4>Overzicht</h4>${runTable(hard,true)}`, after:paceChart(hard, css('--s1'))};
+    }
+    case 5: { // plan
+      const wk=[]; const ws=weekKey(t); for(let j=11;j>=0;j--) wk.push(addDays(ws,-7*j));
+      const rows=wk.map(k=>{const r=runs.filter(a=>weekKey(a.start.slice(0,10))===k); return {k,p:r.filter(a=>a.plan).length,f:r.filter(a=>!a.plan).length,pk:r.filter(a=>a.plan).reduce((s,a)=>s+(a.distKm||0),0)}});
+      const any=runs.some(a=>a.plan);
+      return {title:'Uit je plan', html:`<div class="info">${any?'Een loop telt als "uit je plan" als je hem gestart hebt als workout uit je Garmin-trainingsplan. Vrije lopen zijn lopen zonder gekoppelde workout.':'Garmin geeft bij je activiteiten (nog) niet door welke workout erbij hoort. Daarom kan het dashboard plan-lopen niet herkennen. Een schema-run toont of dat veld beschikbaar is.'} Geplande sessies die je hebt overgeslagen, kan het dashboard niet zien: daarvoor moet het plan zelf via de API opvraagbaar zijn.</div>
+        <h4>Per week (12 weken)</h4><div class="card" style="padding:12px">`+rows.slice().reverse().map(r=>`<div class="hbar" style="grid-template-columns:70px 1fr 90px"><span>${dLabel(r.k)}</span><div class="track" style="display:flex"><div class="fill" style="width:${(r.p/Math.max(1,...rows.map(x=>x.p+x.f)))*100}%;background:${css('--s1')};border-radius:5px 0 0 5px"></div><div class="fill" style="width:${(r.f/Math.max(1,...rows.map(x=>x.p+x.f)))*100}%;background:${css('--other')};border-radius:0 5px 5px 0"></div></div><span class="n num">${r.p} plan · ${r.f} vrij</span></div>`).join('')+`<div class="legend" style="margin-top:8px"><span><i style="background:${css('--s1')}"></i>uit plan</span><span><i style="background:${css('--other')}"></i>vrij</span></div></div>`};
+    }
+  }
+}
+
+let SHEET=null;
+function renderSheet(){
+  if(!SHEET) return;
+  const d = SHEET.startsWith('m:') ? detailMetric(SHEET.slice(2)) : SHEET.startsWith('c:') ? claudeSheet() : detailRace(+SHEET.slice(2));
+  if(!d){ closeSheet(); return }
+  $('#sheetTitle').textContent=d.title; $('#sheetBody').innerHTML=d.html;
+  if(d.after) requestAnimationFrame(d.after);
+}
+function openSheet(key){
+  SHEET=key; $('#sheetWrap').hidden=false; document.body.style.overflow='hidden';
+  $('#sheetBody').scrollTop=0; renderSheet(); $('#sheetClose').focus({preventScroll:true});
+  try{ history.pushState({sheet:key},'') }catch(e){}
+}
+function closeSheet(fromPop){
+  if(!SHEET) return; const key=SHEET; SHEET=null; hideTip();
+  $('#sheetWrap').hidden=true; document.body.style.overflow='';
+  if(!fromPop && history.state && history.state.sheet){ try{ history.back() }catch(e){} }
+  const btn=document.querySelector(`[data-detail="${key}"]`); if(btn) btn.focus({preventScroll:true});
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-detail]'); if(b&&DATA) openSheet(b.dataset.detail) });
+$('#sheetClose').addEventListener('click',()=>closeSheet());
+$('#sheetBackdrop').addEventListener('click',()=>closeSheet());
+addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet() });
+addEventListener('popstate',()=>{ if(SHEET) closeSheet(true) });
+$('#sheetBody').addEventListener('scroll',hideTip,{passive:true});
+
+/* ============================================================ marathon: richtwaarden (pas hier aan)
+   Bronnen: gangbare sub-4u-schema's (o.a. Hal Higdon Intermediate, Pfitzinger 18/55) pieken met een lange
+   duurloop van ±30–32 km zo'n 3 weken voor de wedstrijd en een weekvolume rond 50–65 km. Tempo's volgen de
+   gebruikelijke vuistregels: rustig = doeltempo + 45–80 s/km, lange duurloop = + 30–60 s/km,
+   drempel = doeltempo − 25–35 s/km. Het zijn richtwaarden, geen wetten: je Garmin-plan gaat voor. */
+const READY = {
+  peakLongKm: 30, peakWeeksLeft: 3,     // piek lange duurloop en wanneer
+  peakWeekKm: 50,                       // gemiddeld weekvolume (4 w) in de piekfase
+  startWeeksLeft: 18, startLongKm: 16, startWeekKm: 30,  // vertrekpunt van de opbouw
+  runsPerWeek: 3,                       // gemiddeld aantal lopen per week (8 w)
+  goalPaceSessions: 3,                  // sessies in 8 w met gemiddeld tempo ≤ doeltempo
+};
+
+const DAY = 864e5;
+const daysBetween = (a,b) => Math.round((parseD(b)-parseD(a))/DAY);
+const QUALITY = new Set(['TEMPO','LACTATE_THRESHOLD','THRESHOLD','VO2MAX','ANAEROBIC_CAPACITY','ANAEROBIC']);
+const isQuality = (a, goalPace) => QUALITY.has((a.teLabel||'').toUpperCase()) || ((a.distKm||0)>=6 && runPace(a) && runPace(a) <= goalPace+10/60);
+const isLong = a => (a.distKm||0) >= 16;
+const sportOf = a => sportName(a.type);
+
+function recoveryState(){
+  const t=isoD(new Date()), out={flags:[], ok:[]};
+  const hv=lastWith('hrv'); if(hv && daysBetween(hv.d,t)<=1){
+    const prev=DATA.days.slice(Math.max(0,hv.i-30),hv.i).map(d=>d.hrv);
+    const lo=hv.v!=null&&DATA.days[hv.i].hrvLow!=null?DATA.days[hv.i].hrvLow:quant(prev,.25);
+    const two=[DATA.days[hv.i],DATA.days[hv.i-1]].filter(Boolean).every(d=>d.hrv!=null&&lo!=null&&d.hrv<lo);
+    if(two) out.flags.push(`HRV twee nachten op rij onder je zone (${fmt(hv.v)} ms, zone vanaf ${fmt(lo)} ms)`);
+    else if(lo!=null && hv.v<lo) out.flags.push(`HRV vannacht onder je zone (${fmt(hv.v)} ms)`);
+    else out.ok.push(`HRV in of boven je zone (${fmt(hv.v)} ms)`);
+  }
+  const rh=lastWith('rhr'); if(rh && daysBetween(rh.d,t)<=1){ const b=baseline('rhr',rh.i);
+    if(b!=null && rh.v>=b+5) out.flags.push(`rusthartslag ${fmt(rh.v-b)} slagen boven normaal`);
+    else if(b!=null) out.ok.push(`rusthartslag normaal (${fmt(rh.v)} bpm)`); }
+  const sl=lastWith('sleepSec'); if(sl && daysBetween(sl.d,t)<=1 && sl.v<6*3600) out.flags.push(`korte nacht (${hm(hrs(sl.v))})`);
+  const bb=lastWith('bbHigh'); if(bb && daysBetween(bb.d,t)<=0 && bb.v<40) out.flags.push(`Body Battery maar ${fmt(bb.v)} vanochtend`);
+  out.level = out.flags.length>=2 ? 'rest' : out.flags.length===1 ? 'easy' : 'go';
+  return out;
+}
+
+/* ---------- gereedheid */
+function readiness(){
+  const t=isoD(new Date()), runs=DATA.activities.filter(isRun), goalPace=RACE.goalSec/60/RACE.distKm;
+  const daysLeft=daysBetween(t,RACE.date), w=daysLeft/7;
+  const frac=Math.max(0,Math.min(1,(READY.startWeeksLeft-w)/(READY.startWeeksLeft-READY.peakWeeksLeft)));
+  const expLong=READY.startLongKm+frac*(READY.peakLongKm-READY.startLongKm), expWeek=READY.startWeekKm+frac*(READY.peakWeekKm-READY.startWeekKm);
+  const final = w<=READY.peakWeeksLeft;
+  const r8=runs.filter(a=>daysBetween(a.start.slice(0,10),t)<=56), r4=runs.filter(a=>daysBetween(a.start.slice(0,10),t)<=28);
+  const longest = final ? Math.max(0,...runs.filter(a=>daysBetween(a.start.slice(0,10),t)<=56).map(a=>a.distKm||0)) : Math.max(0,...r4.map(a=>a.distKm||0));
+  const wkKm = r4.reduce((s,a)=>s+(a.distKm||0),0)/4;
+  const perWeek = r8.length/8;
+  const gp = r8.filter(a=>(a.distKm||0)>=5 && runPace(a) && runPace(a)<=goalPace).length;
+  const hrvT = (()=>{ const v=DATA.days.slice(-14).map(d=>d.hrv), p=DATA.days.slice(-44,-14).map(d=>d.hrv); const a=mean(v), b=mean(p); return a!=null&&b!=null? (a-b)/b*100 : null })();
+  const crit = [
+    {l:'Lange duurloop', v:fmt(longest,1)+' km', target: final? READY.peakLongKm : expLong, val:longest, unit:'km',
+      s: final? `Piek van ${READY.peakLongKm} km gehaald in de laatste 8 weken?` : `Richtwaarde nu ±${fmt(expLong)} km (langste in 4 w), oplopend naar ${READY.peakLongKm} km`},
+    {l:'Weekvolume', v:fmt(wkKm,0)+' km', target: final? READY.peakWeekKm*0.6 : expWeek, val:wkKm, unit:'km',
+      s: final? 'In de taper daalt je volume bewust: richtwaarde ±60% van je piek' : `Richtwaarde nu ±${fmt(expWeek)} km/week (gem. 4 w), oplopend naar ${READY.peakWeekKm}`},
+    {l:'Regelmaat', v:fmt(perWeek,1)+' /week', target:READY.runsPerWeek, val:perWeek, unit:'',
+      s:`Minstens ${READY.runsPerWeek} lopen per week (gem. 8 w)`},
+    {l:'Op doeltempo', v:gp+' lopen', target:READY.goalPaceSessions, val:gp, unit:'',
+      s:`Lopen van 5+ km met gemiddeld ≤ ${paceStr(goalPace)}/km in 8 w (richtwaarde ${READY.goalPaceSessions})`},
+    {l:'Herstel', v: hrvT==null?'–':(hrvT>0?'+':'')+fmt(hrvT,0)+'% HRV', target:-5, val:hrvT==null?null:hrvT, unit:'',
+      s:'HRV laatste 2 weken t.o.v. de 30 dagen ervoor; een daling van meer dan 5% wijst op opgestapelde vermoeidheid'},
+  ];
+  crit.forEach(c=>{ c.state = c.val==null ? 'unk' : c.val>=c.target ? 'ok' : c.val>=c.target*0.85 || (c.l==='Herstel'&&c.val>=-10) ? 'near' : 'behind' });
+  const ok=crit.filter(c=>c.state==='ok').length, behind=crit.filter(c=>c.state==='behind').length;
+  let verdict, color;
+  if(daysLeft<0){ verdict='Wedstrijd voorbij'; color='--text-3' }
+  else if(final){ verdict = behind===0&&ok>=4 ? 'Klaar voor de start' : behind<=1 ? 'Grotendeels klaar' : 'Nog niet helemaal klaar'; color = behind===0?'--good':behind<=1?'--warn':'--bad' }
+  else { verdict = behind===0&&ok>=4 ? 'Op schema' : behind<=1 ? 'Licht achter op schema' : 'Achter op schema'; color = behind===0?'--good':behind<=1?'--warn':'--bad' }
+  return {crit, verdict, color, ok, final, daysLeft};
+}
+
+/* ---------- volgende training */
+function nextTraining(){
+  const t=isoD(new Date()), goalPace=RACE.goalSec/60/RACE.distKm, runs=DATA.activities.filter(isRun);
+  const daysLeft=daysBetween(t,RACE.date), rec=recoveryState(), why=[];
+  const ranToday = runs.some(a=>a.start.slice(0,10)===t);
+  const day = ranToday ? 'morgen' : 'vandaag', ref = ranToday ? addDays(t,1) : t;
+  const lastRun=runs[0], lastLong=runs.find(isLong), lastQ=runs.find(a=>isQuality(a,goalPace));
+  const sinceLong = lastLong? daysBetween(lastLong.start.slice(0,10),ref) : 99, sinceQ = lastQ? daysBetween(lastQ.start.slice(0,10),ref) : 99;
+  const yday = addDays(ref,-1), yActs = DATA.activities.filter(a=>a.start.slice(0,10)===yday);
+  const yHeavyRun = yActs.some(a=>isRun(a)&&(isLong(a)||isQuality(a,goalPace)));
+  const yOther = yActs.filter(a=>!isRun(a)&&(a.durMin||0)>=45).map(a=>sportOf(a));
+  const dow = parseD(ref).getDay(), weekend = dow===0||dow===6;
+  const longestRecent = Math.max(0,...runs.filter(a=>daysBetween(a.start.slice(0,10),t)<=28).map(a=>a.distKm||0));
+  const P = (a,b)=>paceStr(goalPace+a/60)+'–'+paceStr(goalPace+b/60)+' /km';
+  if(rec.flags.length) why.push('Herstel: '+rec.flags.join(', ')); else if(rec.ok.length) why.push('Herstel: '+rec.ok.join(', '));
+  if(lastRun) why.push(`Laatste loop: ${dLong(lastRun.start.slice(0,10))}, ${fmt(lastRun.distKm,1)} km (${teName(lastRun.teLabel).toLowerCase()})`);
+  if(lastLong) why.push(`Laatste lange duurloop: ${sinceLong} dagen geleden (${fmt(lastLong.distKm,1)} km)`);
+  if(yOther.length) why.push(`Gisteren: ${yOther.join(', ')}`);
+
+  if(daysLeft<0) return {day, title:'Herstel na je marathon', detail:'De eerste 1 à 2 weken alleen rustig wandelen, fietsen of korte rustige loopjes. Bouw daarna geleidelijk weer op.', why};
+  if(daysLeft===0) return {day, title:'Wedstrijddag', detail:`Start rustig: de eerste 5 km op ${paceStr(goalPace+5/60)}–${paceStr(goalPace)} /km. Eet en drink zoals je getraind hebt. Succes in Groningen!`, why};
+  if(daysLeft<=7) return {day, title: daysLeft<=2?'Rust of 20 min heel rustig':'Korte opfrisloop', detail: daysLeft<=2?'Benen fris houden. Eventueel 15–20 min joggen met 3 korte versnellingen van 20 s.':`5–6 km rustig (${P(45,80)}) met 4 versnellingen van 20 s. Geen extra trainingswinst meer zoeken: fris aan de start is het doel.`, why:[...why,`Nog ${daysLeft} dagen: wedstrijdweek`]};
+  if(rec.level==='rest') return {day, title:'Rustdag', detail:'Je lichaam geeft meerdere herstelsignalen tegelijk. Neem rust of wandel 30 minuten. Een gemiste training kost minder dan doortrainen op vermoeidheid. Blijft dit meerdere dagen zo, of voel je je ziek, overleg dan met een arts.', why};
+  if(rec.level==='easy' || yHeavyRun) return {day, title:'Herstelloop', detail:`30–40 min heel rustig (${P(70,100)}), of rust als je je moe voelt. Hartslag laag houden: je moet makkelijk kunnen praten.`, why:[...why, yHeavyRun?'Gisteren een zware loop: eerst herstellen':'Eén herstelsignaal: rustig aan']};
+  const taper = daysLeft<=21;
+  if(sinceLong>=6 && (weekend || sinceLong>=8)){
+    let km = longestRecent<12 ? 14 : Math.min(READY.peakLongKm+2, longestRecent+2);
+    if(taper) km = Math.round(READY.peakLongKm*(daysLeft>14?0.8:0.6));
+    if(yOther.includes('Tennis')||yOther.includes('Boulderen')) why.push('Na tennis of boulderen gisteren: start extra rustig');
+    return {day, title:`Lange duurloop: ${km} km`, detail:`Rustig en gelijkmatig op ${P(30,60)}.${!taper&&km>=24?` Optioneel: loop de laatste 3–5 km op doeltempo (${paceStr(goalPace)} /km) als je je goed voelt.`:''} Oefen je voeding: eet en drink onderweg zoals je op de wedstrijd zal doen.`, why:[...why, taper?'Taper: de lange duurloop wordt korter':`Opbouw: hooguit ±2 km langer dan je langste loop van de laatste 4 weken (${fmt(longestRecent,1)} km)`]};
+  }
+  if(sinceQ>=4 && !yOther.length){
+    const thr = paceStr(goalPace-35/60)+'–'+paceStr(goalPace-25/60)+' /km';
+    const opts = daysLeft>56
+      ? {title:'Drempeltraining', detail:`2 km inlopen, dan 4 × 2 km op ${thr} met 2 min dribbelen ertussen, en 2 km uitlopen. Dit verhoogt het tempo dat je lang kan volhouden.`}
+      : {title:'Tempoloop op wedstrijdtempo', detail:`2 km inlopen, dan 3 × 4 km op doeltempo (${paceStr(goalPace)} /km) met 1 km rustig ertussen, en 2 km uitlopen. Zo raakt je lichaam vertrouwd met wedstrijdtempo.`};
+    return {day, ...opts, why:[...why, `Laatste kwaliteitstraining: ${sinceQ===99?'geen in je historiek':sinceQ+' dagen geleden'}`]};
+  }
+  return {day, title:'Rustige duurloop', detail:`8–10 km op ${P(45,80)}. Dit soort lopen vormt het grootste deel van je volume en bouwt je aerobe basis op.${yOther.length?' Na '+yOther.join(' en ').toLowerCase()+' gisteren: hou het echt rustig.':''}`, why:[...why, 'Lange duurloop en kwaliteitstraining zijn recent gedaan: nu volume op lage intensiteit']};
+}
+
+/* ---------- coach-regels */
+function coachItems(){
+  const t=isoD(new Date()), D=DATA.days, A=DATA.activities, out=[];
+  const add=(cat,level,title,text,why)=>out.push({cat,level,title,text,why});
+  const last=n=>D.slice(-n), prevN=(n,m)=>D.slice(-(n+m),-n);
+  // herstel
+  const rec=recoveryState();
+  if(rec.level==='rest') add('Herstel','warn','Neem het vandaag rustig', 'Meerdere herstelsignalen tegelijk. Kies een rustdag of iets heel lichts.', rec.flags.join(' · '));
+  else if(rec.level==='easy') add('Herstel','info','Licht herstelsignaal', 'Geen zware training vandaag. Rustig bewegen kan wel.', rec.flags.join(' · '));
+  else if(rec.ok.length) add('Herstel','good','Goed hersteld', 'Je herstelwaarden liggen binnen je normaal. Een goede dag voor een stevige training.', rec.ok.join(' · '));
+  const rhr30=mean(last(30).map(d=>d.rhr)), rhrP=mean(prevN(30,60).map(d=>d.rhr));
+  if(rhr30!=null&&rhrP!=null){ const d=rhr30-rhrP;
+    if(d<=-1.5) add('Hartslag','good','Rusthartslag daalt', `Gemiddeld ${fmt(-d,1)} bpm lager dan de 2 maanden ervoor. Vaak een teken dat je conditie verbetert.`, `${fmt(rhr30,1)} bpm (30 d) vs. ${fmt(rhrP,1)} bpm (60 d daarvoor)`);
+    else if(d>=2) add('Hartslag','warn','Rusthartslag stijgt', `Gemiddeld ${fmt(d,1)} bpm hoger dan eerder. Mogelijke oorzaken: vermoeidheid, te weinig herstel, stress, alcohol of beginnende ziekte. Bouw een paar rustigere dagen in.`, `${fmt(rhr30,1)} vs. ${fmt(rhrP,1)} bpm`); }
+  // HRV-trend
+  const h14=mean(last(14).map(d=>d.hrv)), h30=mean(prevN(14,30).map(d=>d.hrv));
+  if(h14!=null&&h30!=null){ const p=(h14-h30)/h30*100;
+    if(p<=-7) add('HRV','warn','HRV-trend daalt', `Je HRV ligt de laatste 2 weken ${fmt(-p)}% lager dan ervoor. Kijk naar slaap, trainingsvolume en stress, en plan een lichtere week als het aanhoudt.`, `${fmt(h14)} vs. ${fmt(h30)} ms`);
+    else if(p>=5) add('HRV','good','HRV-trend stijgt', `${fmt(p)}% hoger dan de 30 dagen ervoor. Je herstel volgt je training goed.`, `${fmt(h14)} vs. ${fmt(h30)} ms`); }
+  // slaap
+  const s14=mean(last(14).map(d=>hrs(d.sleepSec)));
+  if(s14!=null){ if(s14<7) add('Slaap','warn','Te weinig slaap', `Gemiddeld ${hm(s14)} per nacht de laatste 2 weken. Voor volwassenen wordt 7–9 uur aangeraden, en bij marathontraining is dat extra belangrijk voor herstel.`, 'Richtlijn: minstens 7 u (AASM/SRS), 7–9 u (National Sleep Foundation)');
+    else add('Slaap','good','Voldoende slaap', `Gemiddeld ${hm(s14)} per nacht de laatste 2 weken.`, 'Richtlijn: 7–9 u'); }
+  const bt=last(30).map(d=>d.bedtime).filter(Boolean).map(x=>{let [h,m]=x.split(':').map(Number),v=h*60+m; if(v<720)v+=1440; return v});
+  if(bt.length>=10){ const sdv=sd(bt);
+    const E=[],L=[]; const med=median(bt); last(90).forEach(d=>{ if(!d.bedtime||d.sleepScore==null) return; let [h,m]=d.bedtime.split(':').map(Number),v=h*60+m; if(v<720)v+=1440; (v<=med?E:L).push(d.sleepScore) });
+    const diff = E.length>=5&&L.length>=5 ? mean(E)-mean(L) : null;
+    if(sdv>45) add('Slaap','info','Onregelmatige bedtijd', `Je bedtijd schommelt met ±${fmt(sdv)} min.${diff!=null&&diff>2?` Op avonden dat je vroeger dan ${String(Math.floor(med/60)%24).padStart(2,'0')}:${String(Math.round(med%60)).padStart(2,'0')} gaat slapen, scoor je gemiddeld ${fmt(diff,1)} punten beter.`:''} Een vaster ritme helpt vaak voor diepe slaap.`, `Spreiding over 30 nachten${diff!=null?`; vroeg ${E.length} n. vs. laat ${L.length} n.`:''}`); }
+  // stress
+  const st14=mean(last(14).map(d=>d.stressAvg)), stP=mean(prevN(14,30).map(d=>d.stressAvg));
+  if(st14!=null&&stP!=null&&st14-stP>=5) add('Stress','warn','Meer stress dan normaal', `Gemiddeld ${fmt(st14)} tegenover ${fmt(stP)} eerder. Stress en zware training belasten allebei je herstel. Overweeg om de intensiteit even te verlagen.`, 'Garmin-stress, gemiddelde per dag');
+  else if(st14!=null&&st14<=25) add('Stress','good','Lage stress', `Gemiddeld ${fmt(st14)}: in Garmins rustzone (0–25).`, 'Laatste 14 dagen');
+  // belasting (acuut vs chronisch)
+  const load=(a,b)=>A.filter(x=>{const d=x.start.slice(0,10);return d>a&&d<=b}).reduce((s,x)=>s+(x.load||0),0);
+  const ac=load(addDays(t,-7),t), ch=load(addDays(t,-35),addDays(t,-7))/4;
+  if(ch>0){ const r=ac/ch;
+    if(r>1.5) add('Training','warn','Belasting stijgt snel', `Je belasting van de laatste 7 dagen is ${fmt(r*100)}% van je gemiddelde week. Sterke pieken gaan in onderzoek samen met een hoger blessurerisico. Bouw liever geleidelijk op.`, 'Acute/chronische belasting (o.a. Gabbett 2016): 0,8–1,3 geldt als de veilige zone');
+    else if(r<0.6) add('Training','info','Rustige week', `Belasting ${fmt(r*100)}% van je gemiddelde. Prima als herstelweek; duurt het langer, dan verlies je wat fitheid.`, 'Acute/chronische belasting'); }
+  // lopen 80/20
+  const runs28=A.filter(a=>isRun(a)&&daysBetween(a.start.slice(0,10),t)<=28);
+  if(runs28.length>=4){ const tot=runs28.reduce((s,a)=>s+(a.durMin||0),0), easy=runs28.filter(a=>EASY.has((a.teLabel||'').toUpperCase())).reduce((s,a)=>s+(a.durMin||0),0);
+    if(runs28.some(a=>a.teLabel)){ const p=easy/tot*100;
+      if(p<70) add('Lopen','warn','Te weinig rustige kilometers', `Maar ${fmt(p)}% van je looptijd is rustig. De meeste marathonschema's mikken op ongeveer 80% rustig en 20% intensief.`, 'Op basis van Garmins trainingseffect, laatste 4 weken (80/20-principe, Seiler)');
+      else add('Lopen','good','Goede intensiteitsverdeling', `${fmt(p)}% van je looptijd is rustig. Dat zit dicht bij de 80/20-verdeling.`, 'Laatste 4 weken'); } }
+  // volumesprong
+  const wk=w=>A.filter(a=>isRun(a)&&weekKey(a.start.slice(0,10))===w).reduce((s,a)=>s+(a.distKm||0),0);
+  const w0=weekKey(t), w1=addDays(w0,-7), w2=addDays(w0,-14), k1=wk(w1), k2=wk(w2);
+  if(k2>10 && k1>k2*1.2) add('Lopen','warn','Grote sprong in volume', `Vorige week liep je ${fmt(k1)} km, dat is ${fmt((k1/k2-1)*100)}% meer dan de week ervoor (${fmt(k2)} km). Een vaak gebruikte vuistregel is hooguit 10% per week.`, 'Vuistregel 10%');
+  // VO2max
+  const v=A.filter(a=>a.vo2).map(a=>({d:a.start.slice(0,10),v:a.vo2}));
+  const vNow=mean(v.filter(x=>daysBetween(x.d,t)<=30).map(x=>x.v)), vOld=mean(v.filter(x=>{const g=daysBetween(x.d,t);return g>60&&g<=120}).map(x=>x.v));
+  if(vNow!=null&&vOld!=null){ const d=vNow-vOld;
+    if(d>=0.5) add('VO2max','good','VO2max stijgt', `+${fmt(d,1)} tegenover 2 à 4 maanden geleden (nu ±${fmt(vNow,1)}). Je aerobe conditie verbetert.`, 'Garmin-schatting per loop');
+    else if(d<=-0.5) add('VO2max','warn','VO2max daalt', `${fmt(d,1)} tegenover 2 à 4 maanden geleden. Mogelijke oorzaken: vermoeidheid, warmte, of te weinig intensieve prikkels.`, 'Garmin-schatting');
+    else { const vo2s=runs28.filter(a=>['VO2MAX','ANAEROBIC_CAPACITY'].includes((a.teLabel||'').toUpperCase())).length;
+      add('VO2max','info','VO2max stabiel', `Rond ${fmt(vNow,1)}.${vo2s===0?' Je deed de laatste 4 weken geen VO2max-intervallen. Eén sessie per week of om de week (bv. 5 × 3 min snel) kan je VO2max verder doen stijgen.':''}`, 'Garmin-schatting'); } }
+  // tennis
+  const ten=A.filter(a=>sportOf(a)==='Tennis'&&daysBetween(a.start.slice(0,10),t)<=90);
+  if(ten.length>=4){
+    const late=[],early=[]; ten.forEach(a=>{ const h=+a.start.slice(11,13), d=D.find(x=>x.d===addDays(a.start.slice(0,10),1)); if(!d||d.sleepScore==null) return; (h>=20?late:early).push(d.sleepScore) });
+    if(late.length>=3&&early.length>=3&&mean(early)-mean(late)>=3) add('Tennis','info','Late tennis kost slaap', `Na tennis na 20:00 is je slaapscore gemiddeld ${fmt(mean(early)-mean(late),1)} punten lager dan na een vroegere sessie. Plan zware tennissessies liever vroeger op de avond, zeker vóór een kwaliteitstraining.`, `${late.length} late vs. ${early.length} vroege sessies (90 d)`);
+    const beforeLong=A.filter(a=>isRun(a)&&isLong(a)&&daysBetween(a.start.slice(0,10),t)<=90&&A.some(x=>sportOf(x)==='Tennis'&&x.start.slice(0,10)===addDays(a.start.slice(0,10),-1))).length;
+    if(beforeLong>=2) add('Tennis','info','Tennis vlak voor je lange duurloop', `${beforeLong}× tenniste je de dag vóór een lange duurloop. Tennis belast je kuiten en achillespezen explosief. Een dag ertussen geeft je benen meer kans om te herstellen.`, 'Laatste 90 dagen');
+    else add('Tennis','good','Tennis', `${ten.length} sessies in 90 dagen, gemiddeld ${fmt(mean(ten.map(a=>a.durMin)))} min. Een goede aanvulling: zijwaartse bewegingen en sprintjes die lopen niet traint.`, 'Laatste 90 dagen'); }
+  // boulderen
+  const bo=A.filter(a=>/boulder|climb/.test(a.type||'')&&daysBetween(a.start.slice(0,10),t)<=90).sort((a,b)=>a.start<b.start?-1:1);
+  if(bo.length>=3){ let b2b=0; for(let i=1;i<bo.length;i++) if(daysBetween(bo[i-1].start.slice(0,10),bo[i].start.slice(0,10))===1) b2b++;
+    if(b2b>=2) add('Boulderen','warn','Boulderen op opeenvolgende dagen', `${b2b}× boulderde je twee dagen na elkaar. Vingerpezen herstellen trager dan spieren: minstens een rustdag tussen zware sessies verkleint de kans op peesblessures.`, 'Laatste 90 dagen; gangbaar klimadvies');
+    else add('Boulderen','good','Boulderen', `${bo.length} sessies in 90 dagen met voldoende rust ertussen. Boulderen traint je kracht en romp: goed voor je loophouding.`, 'Laatste 90 dagen');
+    const bl=A.filter(a=>isRun(a)&&isLong(a)&&bo.some(x=>x.start.slice(0,10)===addDays(a.start.slice(0,10),-1))).length;
+    if(bl>=2) add('Boulderen','info','Boulderen vóór je lange duurloop', `${bl}× boulderde je de dag vóór je lange duurloop. Dat valt meestal mee voor je benen, maar zware sessies vermoeien ook je romp en je algemene herstel.`, 'Laatste 90 dagen'); }
+  // stappen
+  const st=mean(last(14).map(d=>d.steps)); if(st!=null&&st<6000) add('Dagelijks','info','Weinig stappen buiten je trainingen', `Gemiddeld ${fmt(st)} stappen per dag. Ook naast je trainingen helpt dagelijks bewegen je herstel en algemene gezondheid.`, 'Laatste 14 dagen');
+  return out;
+}
+
+const LV = {good:{c:'--good',i:'✓',t:'goed'}, warn:{c:'--bad',i:'!',t:'aandacht'}, info:{c:'--s1',i:'i',t:'tip'}};
+function renderCoach(){
+  const items=coachItems(), cats=[...new Set(items.map(i=>i.cat))];
+  const order={warn:0,info:1,good:2};
+  $('#coach').innerHTML = items.length ? cats.map(c=>{ const it=items.filter(i=>i.cat===c).sort((a,b)=>order[a.level]-order[b.level]);
+    return `<div class="card c6"><h3>${esc(c)}</h3>${it.map(x=>{const L=LV[x.level]; return `<div class="advice"><span class="badge" style="background:${css(L.c)}" aria-label="${L.t}">${L.i}</span><div><div class="at">${esc(x.title)}</div><div class="ad">${esc(x.text)}</div>${x.why?`<div class="aw">${esc(x.why)}</div>`:''}</div></div>`}).join('')}</div>` }).join('')
+    : '<div class="card"><div class="empty">Nog te weinig data voor suggesties</div></div>';
+}
+
+function renderReadiness(){
+  if(!RACE.date){ return }
+  const R=readiness(), N=nextTraining();
+  const ic={ok:['--good','✓','op schema'],near:['--warn','≈','bijna'],behind:['--bad','!','achter'],unk:['--text-3','?','onbekend']};
+  $('#ready').innerHTML = `<div class="card-head"><h3>${R.final?'Klaar voor de marathon?':'Op schema voor de marathon?'}</h3><span class="pill" style="background:${css(R.color)};color:${R.color==='--warn'?'#111':'#fff'}">${esc(R.verdict)}</span></div>
+    <div class="hint">${R.crit.filter(c=>c.state==='ok').length} van ${R.crit.length} punten in orde. Richtwaarden groeien mee met je opbouw (aanpasbaar bovenaan de code).</div>
+    ${R.crit.map(c=>{const s=ic[c.state]; return `<div class="advice"><span class="badge" style="background:${css(s[0])}" aria-label="${s[2]}">${s[1]}</span><div style="flex:1"><div class="at" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(c.l)}</span><span class="num">${esc(c.v)}</span></div><div class="aw">${esc(c.s)}</div></div></div>`}).join('')}`;
+  $('#nextRun').innerHTML = `<div class="card-head"><h3>Volgende training (${esc(N.day)})</h3></div>
+    <div class="next-t">${esc(N.title)}</div><div class="ad" style="margin:4px 0 10px">${esc(N.detail)}</div>
+    <div class="aw"><b>Waarom:</b></div><ul class="why">${N.why.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>
+    <div class="hint" style="margin-top:8px">Een suggestie op basis van je data. Je Garmin-plan kent je geplande sessies; volg bij twijfel je plan en je gevoel.</div>`;
+}
+
+/* ---------- samenvatting voor Claude */
+function claudeSummary(){
+  const t=isoD(new Date()), D=DATA.days, A=DATA.activities, goalPace=RACE.goalSec/60/RACE.distKm;
+  const m=(k,a,b)=>mean(D.slice(a,b).map(d=>d[k]));
+  const L=[];
+  L.push(`Ik train voor de ${RACE.name} op ${RACE.date} (nog ${daysBetween(t,RACE.date)} dagen), doel sub ${Math.floor(RACE.goalSec/3600)}u (${paceStr(goalPace)}/km). Hieronder mijn Garmin-data. Geef me concrete suggesties voor training, herstel, slaap en mijn andere sporten, en zeg wat je opvalt. Geen medisch advies, wel eerlijk.`);
+  L.push('', '## Gezondheid (gem. laatste 14 d | 30 d daarvoor)');
+  [['Slaapscore','sleepScore',0],['Slaap (u)','sleepSec',1,3600],['HRV (ms)','hrv',0],['Rusthartslag','rhr',1],['Body Battery max','bbHigh',0],['Stress','stressAvg',0],['Stappen','steps',0]]
+    .forEach(([l,k,dec,div])=>{ const a=m(k,-14), b=m(k,-44,-14); if(a!=null) L.push(`- ${l}: ${fmt(a/(div||1),dec)} | ${fmt(b==null?null:b/(div||1),dec)}`) });
+  const bt=D.slice(-30).map(d=>d.bedtime).filter(Boolean); if(bt.length) L.push(`- Bedtijden (30 d): mediaan ${bt.slice().sort()[bt.length>>1]}`);
+  const fa=DATA.fitnessAge||{}; if(fa.fitnessAge) L.push(`- Fitnessleeftijd ${fa.fitnessAge} (echte leeftijd ${fa.chronologicalAge??'?'})`);
+  const v=A.filter(a=>a.vo2); if(v.length) L.push(`- VO2max laatste: ${v[0].vo2}`);
+  L.push('', '## Lopen per week (laatste 8 weken: km | aantal | langste)');
+  const ws=weekKey(t); for(let i=7;i>=0;i--){ const k=addDays(ws,-7*i), r=A.filter(a=>isRun(a)&&weekKey(a.start.slice(0,10))===k);
+    L.push(`- week van ${k}: ${fmt(r.reduce((s,a)=>s+(a.distKm||0),0),1)} km | ${r.length} | ${fmt(Math.max(0,...r.map(a=>a.distKm||0)),1)} km${i===0?' (lopende week)':''}`) }
+  L.push('', '## Laatste 12 lopen (datum, km, tempo, hartslag, Garmin-type, uit plan)');
+  A.filter(isRun).slice(0,12).forEach(a=>L.push(`- ${a.start.slice(0,10)}: ${fmt(a.distKm,1)} km, ${paceStr(runPace(a))}/km, ♥${a.avgHr??'?'}, ${teName(a.teLabel)}${a.plan?', plan':''}`));
+  L.push('', '## Andere sporten (laatste 8 weken: sessies, uren)');
+  const other={}; A.filter(a=>!isRun(a)&&daysBetween(a.start.slice(0,10),t)<=56).forEach(a=>{const n=sportOf(a); other[n]=other[n]||{n:0,m:0}; other[n].n++; other[n].m+=a.durMin||0});
+  Object.entries(other).forEach(([n,o])=>L.push(`- ${n}: ${o.n}×, ${fmt(o.m/60,1)} u`));
+  const R=readiness(); L.push('', `## Gereedheid volgens het dashboard: ${R.verdict}`); R.crit.forEach(c=>L.push(`- ${c.l}: ${c.v} (${c.state})`));
+  return L.join('\n');
+}
+function claudeSheet(){
+  const txt=claudeSummary();
+  return {title:'Vraag Claude', html:`<div class="info">Deze samenvatting bevat alleen cijfers en datums, geen activiteitsnamen of plaatsen. Kopieer ze, plak ze in een gesprek met Claude, of een andere AI, en je krijgt een uitgebreidere analyse. Het dashboard zelf heeft Claude niet nodig.</div>
+    <div style="display:flex;gap:8px;margin:12px 0"><button class="btn" id="copyBtn" type="button" style="width:auto;padding:10px 16px">Kopieer samenvatting</button><a class="icon-btn" href="https://claude.ai/new" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;padding:10px 14px">Open Claude ↗</a></div>
+    <div class="hint" id="copyMsg" role="status"></div>
+    <textarea id="sumTxt" readonly class="field" style="height:320px;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;margin-top:6px">${esc(txt)}</textarea>`,
+    after:()=>{ $('#copyBtn').addEventListener('click',async()=>{ const ta=$('#sumTxt');
+      try{ await navigator.clipboard.writeText(ta.value); $('#copyMsg').textContent='Gekopieerd. Plak het nu in Claude.' }
+      catch(e){ ta.focus(); ta.select(); try{ document.execCommand('copy'); $('#copyMsg').textContent='Gekopieerd.' }catch(_){ $('#copyMsg').textContent='Selecteer de tekst en kopieer manueel.' } } }) }};
+}
+
 function renderAll(){
   if(!DATA) return;
   document.querySelectorAll('#range button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.r===RANGE));
   const days=sliceDays(), sp=computeSportOrder();
-  renderHeader(); renderTiles(); renderRace(); renderRecovery(days); renderEnergy(days); renderTraining(days,sp); renderDaily(days); renderFacts(sp); renderHeatmap();
+  renderHeader(); renderTiles(); renderCoach(); renderRace(); renderReadiness(); renderRecovery(days); renderEnergy(days); renderTraining(days,sp); renderDaily(days); renderFacts(sp); renderHeatmap(); renderSheet();
 }
 
 /* ============================================================ wiring */
@@ -761,7 +1207,7 @@ $('#themeBtn').addEventListener('click',()=>{
   const cur=document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
   const nx=cur==='dark'?'light':'dark'; document.documentElement.dataset.theme=nx; LS.set('gd-theme',nx); renderAll();
 });
-$('#lockBtn').addEventListener('click',async()=>{ DATA=null; LS.del('gd-pw'); await KDB.del(); $('#app').hidden=true; $('#lock').hidden=false; $('#pw').value=''; });
+$('#lockBtn').addEventListener('click',async()=>{ closeSheet(); DATA=null; LS.del('gd-pw'); await KDB.del(); $('#app').hidden=true; $('#lock').hidden=false; $('#pw').value=''; });
 
 function showApp(){ $('#lock').hidden=true; $('#app').hidden=false; renderAll() }
 async function unlock(pw, remember){
