@@ -90,7 +90,7 @@ h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--
 .card h3{font-size:15px;margin:0;font-weight:600}
 .card .hint{font-size:12.5px;color:var(--text-3);margin:2px 0 8px}
 .card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.card-head .big{font-size:20px;font-weight:650}
+.card-head .big{font-size:20px;font-weight:650;white-space:nowrap}
 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--text-2);margin:2px 0 6px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .legend i.ln{height:2px;border-radius:1px;vertical-align:3px;width:14px}
@@ -184,6 +184,22 @@ footer code{font-size:12px}
     <div class="controls"><div class="seg" role="group" aria-label="Periode" id="range">
       <button data-r="7">7 d</button><button data-r="30">30 d</button><button data-r="90">90 d</button><button data-r="365">1 jaar</button>
     </div></div>
+
+    <section id="raceSec">
+    <h2 class="sec" id="raceTitle">Marathon</h2>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h3 id="raceName"></h3><span class="big num" id="raceCount"></span></div>
+        <div class="hint" id="raceSub"></div><div class="tiles" id="raceTiles" style="margin-top:8px"></div></div>
+      <div class="card c8"><div class="card-head"><h3>Kilometers per week</h3><span class="big num" id="runKmAvg"></span></div>
+        <div class="hint">Alle loopactiviteiten, laatste 20 weken. Blauw = uit je Garmin-plan, grijs = vrij gelopen</div><div class="legend" id="runLegend"></div><div class="chart" id="chRunKm"></div></div>
+      <div class="card c4"><div class="card-head"><h3>Langste loop per week</h3><span class="big num" id="longMax"></span></div>
+        <div class="hint">Opbouw van je lange duurloop (km)</div><div class="chart" id="chLong"></div></div>
+      <div class="card c6"><h3>Soort trainingen (4 weken)</h3><div class="hint">Volgens Garmins trainingseffect, in minuten</div><div id="runMix"></div></div>
+      <div class="card c6"><div class="card-head"><h3>Loopefficiëntie</h3><span class="big num" id="effNow"></span></div>
+        <div class="hint">Meter per hartslag bij rustige lopen. Stijgt dit, dan loop je sneller bij dezelfde inspanning</div><div class="chart" id="chEff"></div></div>
+      <div class="card"><h3>Laatste lopen</h3><div class="hint">Tempo t.o.v. je doeltempo</div><ul class="acts" id="runList"></ul></div>
+    </div>
+    </section>
 
     <h2 class="sec">Herstel</h2>
     <div class="grid">
@@ -322,7 +338,7 @@ function niceTicks(min,max,n=4){
   return t;
 }
 /* frame: builds svg with y grid, x labels; returns scales */
-function frame(container, {xs, yMin, yMax, h=180, yFmt=v=>fmt(v), bandPad=false}){
+function frame(container, {xs, yMin, yMax, h=180, yFmt=v=>fmt(v, Number.isInteger(v)?0:Math.abs(v)<10?2:1), bandPad=false}){
   container.innerHTML='';
   const W = Math.max(260, container.clientWidth||320), H=h, m={l:34,r:8,t:8,b:22};
   const svg = el('svg',{viewBox:`0 0 ${W} ${H}`, height:H, role:'img'}, container);
@@ -420,6 +436,9 @@ function sparkline(vals, color){
 function dataTable(container, head, rows){
   container.innerHTML = `<details class="table"><summary>Toon als tabel</summary><div class="tablewrap"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`;
 }
+
+/* ============================================================ wedstrijd (pas hier aan) */
+const RACE = {name:'Marathon Groningen', date:'2027-04-18', distKm:42.195, goalSec:4*3600};
 
 /* ============================================================ domain */
 const SPORT = {tennis:'Tennis',bouldering:'Boulderen',indoor_climbing:'Klimmen',rock_climbing:'Klimmen',climbing:'Klimmen',
@@ -653,11 +672,84 @@ function renderHeader(){
   $('#foot').innerHTML = `Laatste sync: ${gen.toLocaleString('nl-BE',{dateStyle:'medium',timeStyle:'short'})} · ${DATA.days.length} dagen · ${DATA.activities.length} activiteiten<br>Bronnen: ${cov||'–'}<br>Bron: Garmin Connect Personal API. Geen medisch advies.`;
 }
 
+const isRun = a => /run/.test(a.type||'');
+const paceStr = minPerKm => { if(!minPerKm||!isFinite(minPerKm)) return '–'; let m=Math.floor(minPerKm), s=Math.round((minPerKm-m)*60); if(s===60){m++;s=0} return m+':'+String(s).padStart(2,'0') };
+const runPace = a => a.durMin && a.distKm ? a.durMin/a.distKm : null;
+const TE = {RECOVERY:'Herstel',BASE:'Duur',AEROBIC_BASE:'Duur',TEMPO:'Tempo',LACTATE_THRESHOLD:'Drempel',THRESHOLD:'Drempel',
+  VO2MAX:'VO2max',ANAEROBIC_CAPACITY:'Anaeroob',ANAEROBIC:'Anaeroob',SPRINT:'Sprint',NONE:'Onbekend'};
+const teName = l => TE[(l||'').toUpperCase()] || (l ? l.replace(/_/g,' ').toLowerCase().replace(/^./,c=>c.toUpperCase()) : 'Onbekend');
+const EASY = new Set(['RECOVERY','BASE','AEROBIC_BASE']);
+
+function renderRace(){
+  const runs = DATA.activities.filter(isRun);
+  const sec = $('#raceSec'); if(!runs.length && !RACE.date){ sec.hidden=true; return } sec.hidden=false;
+  const t=isoD(new Date()), daysLeft=Math.round((parseD(RACE.date)-parseD(t))/864e5);
+  const goalPace = RACE.goalSec/60/RACE.distKm;
+  $('#raceTitle').textContent = 'Marathon';
+  $('#raceName').textContent = RACE.name+' · '+dLong(RACE.date)+' '+RACE.date.slice(0,4);
+  $('#raceCount').textContent = daysLeft>=0 ? daysLeft+' dagen' : 'gelopen';
+  $('#raceSub').textContent = daysLeft>=0 ? `Nog ${Math.floor(daysLeft/7)} weken en ${daysLeft%7} dagen. Doel: sub ${Math.floor(RACE.goalSec/3600)}u, dat is ${paceStr(goalPace)} /km gemiddeld.` : '';
+
+  // weken (laatste 20)
+  const wk=[]; let ws=weekKey(t); for(let i=19;i>=0;i--) wk.push(addDays(ws,-7*i));
+  const per = wk.map(k=>{ const r=runs.filter(a=>weekKey(a.start.slice(0,10))===k);
+    return {k, plan:r.filter(a=>a.plan).reduce((s,a)=>s+(a.distKm||0),0), free:r.filter(a=>!a.plan).reduce((s,a)=>s+(a.distKm||0),0),
+            long:Math.max(0,...r.map(a=>a.distKm||0)), n:r.length, np:r.filter(a=>a.plan).length} });
+  const xs = wk.map(k=>({lbl:dLabel(k),tip:'Week van '+dLong(k)}));
+  const hasPlan = runs.some(a=>a.plan);
+  const keys = hasPlan ? [{k:'plan',label:'Uit plan',color:css('--s1')},{k:'free',label:'Vrij',color:css('--other')}] : [{k:'free',label:'Lopen',color:css('--s1')}];
+  $('#runLegend').innerHTML = hasPlan ? keys.map(k=>`<span><i style="background:${k.color}"></i>${k.label}</span>`).join('') : '';
+  stackChart($('#chRunKm'),{xs,keys,rows:per.map(p=>hasPlan?{plan:p.plan,free:p.free}:{free:p.plan+p.free}),h:200,unit:' km',dec:1});
+  const last4 = per.slice(-5,-1); // 4 volledige weken (huidige week niet meegeteld)
+  const avg4 = mean(last4.map(p=>p.plan+p.free));
+  $('#runKmAvg').textContent = 'ø '+fmt(avg4,0)+' km';
+  lineChart($('#chLong'),{xs,unit:' km',dec:1,series:[{label:'Langste loop',vals:per.map(p=>p.long||null),color:css('--s2')}]});
+  $('#longMax').textContent = fmt(Math.max(0,...per.slice(-8).map(p=>p.long)),1)+' km';
+
+  // tegels
+  const since = addDays(t,-56), recent = runs.filter(a=>a.start.slice(0,10)>=since);
+  const longs = recent.filter(a=>(a.distKm||0)>=16), hard = recent.filter(a=>['TEMPO','LACTATE_THRESHOLD','THRESHOLD'].includes((a.teLabel||'').toUpperCase()));
+  const lp = mean(longs.map(runPace)), hp = mean(hard.map(runPace));
+  const cmp = p => p==null ? '' : `<div class="delta"><span class="badge" style="background:${p<=goalPace?css('--good'):css('--text-3')}" aria-hidden="true">${p<=goalPace?'✓':'·'}</span><span>${p<=goalPace?'sneller dan doeltempo':fmt((p-goalPace)*60,0)+' s/km trager dan doeltempo'}</span></div>`;
+  const planShare = recent.length ? Math.round(recent.filter(a=>a.plan).length/recent.length*100) : null;
+  const tiles = [
+    {l:'Doeltempo', v:paceStr(goalPace), u:'/km', s:'sub '+Math.floor(RACE.goalSec/3600)+'u over '+fmt(RACE.distKm,1)+' km'},
+    {l:'Km per week (4 w)', v:fmt(avg4,0), u:'km', s: per.slice(-1)[0] ? 'deze week al '+fmt(per.slice(-1)[0].plan+per.slice(-1)[0].free,1)+' km' : ''},
+    {l:'Lange duurloop (8 w)', v:fmt(Math.max(0,...recent.map(a=>a.distKm||0)),1), u:'km', s: longs.length? longs.length+' lopen van 16 km of meer':'nog geen loop van 16+ km'},
+    {l:'Tempo lange lopen', v:paceStr(lp), u:'/km', html:cmp(lp), s:'rustiger dan doeltempo is normaal'},
+    {l:'Tempo-/drempellopen', v:paceStr(hp), u:'/km', html:cmp(hp), s: hard.length? hard.length+' sessies (8 w)':'geen in 8 weken'},
+    {l:'Uit je plan (8 w)', v: planShare==null?'–':planShare+'%', u:'', s: hasPlan? recent.filter(a=>a.plan).length+' van '+recent.length+' lopen':'Garmin geeft (nog) geen plan-koppeling door'},
+  ];
+  $('#raceTiles').innerHTML = tiles.map(x=>`<div class="tile"><div class="lbl">${esc(x.l)}</div><div class="val num">${esc(x.v)}<small>${esc(x.u)}</small></div>${x.html||''}<div class="when">${esc(x.s)}</div></div>`).join('');
+
+  // trainingsmix
+  const mix={}; runs.filter(a=>a.start.slice(0,10)>=addDays(t,-28)).forEach(a=>{const n=teName(a.teLabel); mix[n]=(mix[n]||0)+(a.durMin||0)});
+  const mo=Object.entries(mix).sort((a,b)=>b[1]-a[1]), mmax=mo.length?mo[0][1]:1, tot=mo.reduce((s,x)=>s+x[1],0);
+  $('#runMix').innerHTML = mo.length ? mo.map(([n,m])=>`<div class="hbar"><span>${esc(n)}</span><div class="track"><div class="fill" style="width:${m/mmax*100}%;background:${css('--s1')}"></div></div><span class="n num">${fmt(m/tot*100)}%</span></div>`).join('')
+    + `<div class="hint" style="margin-top:8px">${fmt(tot/60,1)} uur lopen in 4 weken</div>` : '<div class="empty">Geen lopen in de laatste 4 weken</div>';
+
+  // efficiëntie: m per hartslag bij rustige lopen
+  const easy = runs.filter(a=>a.avgHr&&a.distKm&&a.durMin&&(EASY.has((a.teLabel||'').toUpperCase())||!a.teLabel)).slice(0,60).reverse();
+  if(easy.length>=3){
+    const vals = easy.map(a=>a.distKm*1000/(a.durMin*a.avgHr));
+    const roll = vals.map((_,i)=> i<2 ? null : mean(vals.slice(Math.max(0,i-4),i+1)));
+    lineChart($('#chEff'),{xs:easy.map(a=>({lbl:dLabel(a.start.slice(0,10)),tip:dLong(a.start.slice(0,10))+' · '+fmt(a.distKm,1)+' km @ '+paceStr(runPace(a))+' · ♥ '+a.avgHr})),
+      series:[{label:'Per loop',vals,color:css('--text-3'),w:1,op:.55,dec:2,noDots:true},{label:'Gem. 5 lopen',vals:roll,color:css('--s3'),dec:2,noDots:true}],dec:2});
+    const n=Math.min(5,vals.length); $('#effNow').textContent = fmt(mean(vals.slice(-n)),2)+' m';
+  } else { $('#chEff').innerHTML='<div class="empty">Nog te weinig rustige lopen met hartslag</div>'; $('#effNow').textContent='' }
+
+  // laatste lopen
+  $('#runList').innerHTML = runs.slice(0,8).map(a=>{ const p=runPace(a);
+    return `<li><span class="dot" style="background:${a.plan?css('--s1'):css('--other')}"></span><div style="min-width:0"><div class="nm">${esc(a.name||'Loop')}</div>
+    <div class="meta">${dLong(a.start.slice(0,10))} · ${esc(teName(a.teLabel))}${a.plan?' · plan':''}</div></div>
+    <div class="rt num">${fmt(a.distKm,1)} km · ${paceStr(p)}/km<br>${a.avgHr?'♥ '+a.avgHr+' · ':''}${p?(p<=goalPace?'≤ doel':'+'+fmt((p-goalPace)*60,0)+' s'):''}</div></li>` }).join('') || '<li class="empty">Nog geen lopen</li>';
+}
+
 function renderAll(){
   if(!DATA) return;
   document.querySelectorAll('#range button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.r===RANGE));
   const days=sliceDays(), sp=computeSportOrder();
-  renderHeader(); renderTiles(); renderRecovery(days); renderEnergy(days); renderTraining(days,sp); renderDaily(days); renderFacts(sp); renderHeatmap();
+  renderHeader(); renderTiles(); renderRace(); renderRecovery(days); renderEnergy(days); renderTraining(days,sp); renderDaily(days); renderFacts(sp); renderHeatmap();
 }
 
 /* ============================================================ wiring */
