@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lijf">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Lijf · Garmin-dashboard</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f6f5f2;--surface:#fcfcfb;--surface-2:#f0efec;--line:#e4e2dc;--grid:#ebe9e4;
+  --text:#0b0b0b;--text-2:#52514e;--text-3:#7a7974;
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s7:#6250d6;
+  --other:#a8a6a0;
+  --good:#0ca30c;--warn:#fab219;--bad:#d03b3b;
+  --seq1:#cde2fb;--seq2:#9ec5f4;--seq3:#5598e7;--seq4:#256abf;--seq5:#104281;--seq0:#eceae5;
+  --accent:#2a78d6;
+  --radius:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111110;--surface:#1a1a19;--surface-2:#232321;--line:#2e2e2b;--grid:#2a2a28;
+    --text:#f0efec;--text-2:#c3c2b7;--text-3:#8f8e86;
+    --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s7:#9085e9;
+    --other:#6a6964;
+    --seq0:#262624;--seq1:#104281;--seq2:#1c5cab;--seq3:#2a78d6;--seq4:#5598e7;--seq5:#9ec5f4;
+    --accent:#3987e5;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111110;--surface:#1a1a19;--surface-2:#232321;--line:#2e2e2b;--grid:#2a2a28;
+  --text:#f0efec;--text-2:#c3c2b7;--text-3:#8f8e86;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s7:#9085e9;
+  --other:#6a6964;
+  --seq0:#262624;--seq1:#104281;--seq2:#1c5cab;--seq3:#2a78d6;--seq4:#5598e7;--seq5:#9ec5f4;
+  --accent:#3987e5;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.num{font-variant-numeric:tabular-nums}
+button,input{font:inherit;color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 48px}
+
+/* lock */
+#lock{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.lock-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px 22px}
+.lock-card h1{font-size:22px;margin:12px 0 4px;letter-spacing:-.01em}
+.lock-card p{margin:0 0 18px;color:var(--text-2);font-size:14px}
+.field{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);font-size:16px}
+.field:focus{outline:2px solid var(--accent);outline-offset:1px}
+.check{display:flex;gap:8px;align-items:center;margin:12px 0 18px;font-size:14px;color:var(--text-2)}
+.btn{width:100%;padding:12px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.6}
+.err{color:var(--bad);font-size:14px;min-height:20px;margin-top:10px}
+
+/* header */
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:4px 0 14px}
+header.top h1{font-size:26px;margin:0;letter-spacing:-.02em}
+header.top .sub{color:var(--text-3);font-size:13px}
+.icon-btn{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer;font-size:13px;color:var(--text-2)}
+.banner{border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:14px;display:flex;gap:8px;align-items:flex-start;background:var(--surface);border:1px solid var(--line)}
+.banner b{color:var(--text)}
+.banner .dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:none}
+
+/* range control */
+.controls{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 10px;margin:0 -16px 6px;padding-left:16px;padding-right:16px}
+.seg{display:flex;background:var(--surface-2);border-radius:12px;padding:3px;gap:2px;max-width:420px}
+.seg button{flex:1;border:0;background:transparent;padding:7px 0;border-radius:9px;font-size:14px;color:var(--text-2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+/* layout */
+h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin:26px 2px 10px;font-weight:600}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(12,1fr)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 12px;grid-column:span 12;min-width:0}
+@media(min-width:760px){.c6{grid-column:span 6}.c4{grid-column:span 4}.c8{grid-column:span 8}}
+.card h3{font-size:15px;margin:0;font-weight:600}
+.card .hint{font-size:12.5px;color:var(--text-3);margin:2px 0 8px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card-head .big{font-size:20px;font-weight:650}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--text-2);margin:2px 0 6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend i.ln{height:2px;border-radius:1px;vertical-align:3px;width:14px}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:620px){.tiles{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:960px){.tiles{grid-template-columns:repeat(6,1fr)}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.tile .lbl{font-size:12.5px;color:var(--text-2)}
+.tile .val{font-size:26px;font-weight:650;letter-spacing:-.02em;margin:2px 0 0}
+.tile .val small{font-size:13px;font-weight:500;color:var(--text-3);margin-left:2px}
+.tile .delta{font-size:12.5px;color:var(--text-2);display:flex;align-items:center;gap:4px;margin-top:2px}
+.tile .when{font-size:11.5px;color:var(--text-3)}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:10px;color:#fff;flex:none}
+.spark{display:block;width:100%;height:28px;margin-top:6px}
+
+/* charts */
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;overflow:visible}
+.ax{font-size:11px;fill:var(--text-3)}
+.gridline{stroke:var(--grid);stroke-width:1}
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:8px 10px;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.18);min-width:120px;max-width:240px;display:none}
+.tip .t{font-weight:600;margin-bottom:3px}
+.tip .r{display:flex;justify-content:space-between;gap:12px;color:var(--text-2)}
+.tip .r b{color:var(--text);font-weight:600}
+.tip .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+
+/* lists */
+.acts{list-style:none;margin:0;padding:0}
+.acts li{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.acts li:first-child{border-top:0}
+.acts .dot{width:10px;height:10px;border-radius:3px}
+.acts .nm{font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts .meta{font-size:12.5px;color:var(--text-3)}
+.acts .rt{text-align:right;font-size:13px;color:var(--text-2)}
+.facts{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:620px){.facts{grid-template-columns:1fr 1fr}}
+@media(min-width:960px){.facts{grid-template-columns:1fr 1fr 1fr}}
+.fact .k{font-size:12.5px;color:var(--text-2)}
+.fact .v{font-size:28px;font-weight:650;letter-spacing:-.02em;margin:2px 0}
+.fact .s{font-size:13px;color:var(--text-2)}
+.hbar{display:grid;grid-template-columns:84px 1fr 52px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.hbar .track{height:10px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.hbar .fill{height:100%;border-radius:5px}
+.hbar .n{text-align:right;color:var(--text-2)}
+details.table{margin-top:6px;font-size:12.5px;color:var(--text-3)}
+details.table summary{cursor:pointer}
+details.table table{border-collapse:collapse;width:100%;margin-top:6px;font-variant-numeric:tabular-nums}
+details.table td,details.table th{padding:3px 6px;border-bottom:1px solid var(--line);text-align:right;color:var(--text-2)}
+details.table th:first-child,details.table td:first-child{text-align:left}
+.tablewrap{max-height:240px;overflow:auto}
+footer{margin-top:28px;color:var(--text-3);font-size:12.5px}
+footer code{font-size:12px}
+.empty{color:var(--text-3);font-size:13px;padding:18px 0;text-align:center}
+.hm{display:block;width:100%}
+</style>
+</head>
+<body>
+<div id="lock">
+  <form class="lock-card" id="lockForm" autocomplete="on">
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="var(--accent)"/><path d="M8 22h6l3-8 5 14 3-9 2 3h5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>Lijf</h1>
+    <p>Je Garmin-data is versleuteld. Ontgrendel met je dashboardwachtwoord.</p>
+    <input type="text" name="username" value="garmin-dashboard" autocomplete="username" hidden>
+    <input class="field" id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord" required>
+    <label class="check"><input type="checkbox" id="remember"> Onthoud op dit toestel</label>
+    <button class="btn" id="unlockBtn" type="submit">Ontgrendelen</button>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <div class="sub" id="today"></div>
+        <h1 id="greet">Hoe sta je ervoor</h1>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn" id="themeBtn" title="Thema wisselen" aria-label="Thema wisselen"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="display:block"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4z" fill="currentColor"/></svg></button>
+        <button class="icon-btn" id="lockBtn" title="Vergrendelen">Vergrendel</button>
+      </div>
+    </header>
+    <div id="banners"></div>
+
+    <h2 class="sec" style="margin-top:6px">Jij vs. jouw normaal</h2>
+    <div class="tiles" id="tiles"></div>
+
+    <div class="controls"><div class="seg" role="group" aria-label="Periode" id="range">
+      <button data-r="7">7 d</button><button data-r="30">30 d</button><button data-r="90">90 d</button><button data-r="365">1 jaar</button>
+    </div></div>
+
+    <h2 class="sec">Herstel</h2>
+    <div class="grid">
+      <div class="card c8"><div class="card-head"><h3>Slaap</h3><span class="big num" id="sleepAvg"></span></div>
+        <div class="hint">Uren per nacht, opgesplitst in slaapfases</div><div class="legend" id="sleepLegend"></div><div class="chart" id="chSleep"></div><div id="tblSleep"></div></div>
+      <div class="card c4"><div class="card-head"><h3>Slaapscore</h3><span class="big num" id="scoreAvg"></span></div>
+        <div class="hint">0–100, gemiddelde over de periode rechtsboven</div><div class="chart" id="chScore"></div></div>
+      <div class="card c6"><div class="card-head"><h3>HRV</h3><span class="big num" id="hrvAvg"></span></div>
+        <div class="hint">Gemiddelde nachtelijke HRV (ms). Band = jouw evenwichtige zone volgens Garmin</div><div class="chart" id="chHrv"></div></div>
+      <div class="card c6"><div class="card-head"><h3>Rusthartslag</h3><span class="big num" id="rhrAvg"></span></div>
+        <div class="hint">Slagen per minuut, lager is doorgaans beter uitgerust</div><div class="chart" id="chRhr"></div></div>
+    </div>
+
+    <h2 class="sec">Energie &amp; stress</h2>
+    <div class="grid">
+      <div class="card c6"><div class="card-head"><h3>Body Battery</h3><span class="big num" id="bbAvg"></span></div>
+        <div class="hint">Laagste tot hoogste stand per dag</div><div class="chart" id="chBb"></div></div>
+      <div class="card c6"><div class="card-head"><h3>Stress</h3><span class="big num" id="stressAvg"></span></div>
+        <div class="hint">Gemiddeld stressniveau per dag (0–100)</div><div class="chart" id="chStress"></div></div>
+    </div>
+
+    <h2 class="sec">Training</h2>
+    <div class="grid">
+      <div class="card c8"><div class="card-head"><h3>Trainingsuren per week</h3><span class="big num" id="trainSum"></span></div>
+        <div class="hint">Per sport, gestapeld</div><div class="legend" id="trainLegend"></div><div class="chart" id="chTrain"></div></div>
+      <div class="card c4"><h3>Laatste activiteiten</h3><div class="hint">&nbsp;</div><ul class="acts" id="acts"></ul></div>
+      <div class="card c6"><div class="card-head"><h3>Belasting</h3><span class="big num" id="loadRatio"></span></div>
+        <div class="hint">Trainingsbelasting per week. Rechtsboven: laatste 7 dagen t.o.v. je weekgemiddelde van de 4 weken ervoor</div><div class="chart" id="chLoad"></div></div>
+      <div class="card c6"><div class="card-head"><h3>VO2max</h3><span class="big num" id="vo2Now"></span></div>
+        <div class="hint">Schatting per loop-/fietsactiviteit (ml/kg/min)</div><div class="chart" id="chVo2"></div></div>
+    </div>
+
+    <h2 class="sec">Dagelijks</h2>
+    <div class="grid">
+      <div class="card c8"><div class="card-head"><h3>Stappen</h3><span class="big num" id="stepsAvg"></span></div>
+        <div class="hint">Lijn = je dagdoel</div><div class="chart" id="chSteps"></div></div>
+      <div class="card c4"><div class="card-head"><h3>Intensiteitsminuten</h3><span class="big num" id="imWeek"></span></div>
+        <div class="hint">Per week; WHO-advies is 150 (intensief telt dubbel)</div><div class="chart" id="chIm"></div></div>
+    </div>
+
+    <h2 class="sec">Weetjes</h2>
+    <div class="grid">
+      <div class="card"><div class="facts" id="facts"></div></div>
+      <div class="card c6"><h3>Slaapscore per weekdag</h3><div class="hint">Laatste 90 dagen: slaap je anders in het weekend?</div><div id="weekday"></div></div>
+      <div class="card c6"><h3>Sportverdeling</h3><div class="hint">Uren in het laatste jaar</div><div id="sportSplit"></div></div>
+      <div class="card"><h3>Activiteitenkalender</h3><div class="hint">Trainingsminuten per dag, laatste 52 weken</div><div id="heatmap"></div></div>
+    </div>
+
+    <footer id="foot"></footer>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+"use strict";
+/* ============================================================ helpers */
+const $ = s => document.querySelector(s);
+const LS = {get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+            set(k,v){try{localStorage.setItem(k,v)}catch(e){}},
+            del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const NL = new Intl.NumberFormat('nl-BE');
+const fmt = (v,d=0)=> v==null||isNaN(v) ? '–' : NL.format(+(+v).toFixed(d));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const parseD = s => new Date(s+'T12:00:00');
+const isoD = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+const addDays = (s,n)=>{const d=parseD(s);d.setDate(d.getDate()+n);return isoD(d)};
+const DOW = ['zo','ma','di','wo','do','vr','za'];
+const MON = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const dLabel = s => {const d=parseD(s);return d.getDate()+' '+MON[d.getMonth()]};
+const dLong = s => {const d=parseD(s);return DOW[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]};
+const mean = a => {const v=a.filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+const median = a => {const v=a.filter(x=>x!=null&&!isNaN(x)).sort((x,y)=>x-y);if(!v.length)return null;const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2};
+const sd = a => {const v=a.filter(x=>x!=null);if(v.length<3)return null;const m=mean(v);return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1))};
+const hrs = s => s==null?null:s/3600;
+const hm = h => h==null?'–':Math.floor(h)+'u'+String(Math.round((h%1)*60)).padStart(2,'0');
+const weekKey = s => {const d=parseD(s);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return isoD(d)};
+
+/* ============================================================ crypto */
+const b64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+async function deriveKey(pw, blob){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
+  // niet-exporteerbaar: ook wie dit toestel/origin deelt, kan de sleutel niet uitlezen
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt:b64(blob.salt), iterations:blob.iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+}
+async function decryptWithKey(blob, key){
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(blob.iv), additionalData:new TextEncoder().encode(blob.aad)}, key, b64(blob.ct));
+  let bytes = pt;
+  if(blob.zip==='gzip'){
+    if(!window.DecompressionStream) throw new Error('Deze browser is te oud (geen DecompressionStream).');
+    bytes = await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+/* Onthouden: we bewaren nooit het wachtwoord, enkel een niet-exporteerbare CryptoKey in IndexedDB */
+const KDB = {
+  open(){ return new Promise((res,rej)=>{ const r=indexedDB.open('gd-keys',1); r.onupgradeneeded=()=>r.result.createObjectStore('k'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) }) },
+  async get(){ try{ const db=await KDB.open(); return await new Promise(res=>{ const q=db.transaction('k').objectStore('k').get('main'); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null) }) }catch(e){ return null } },
+  async set(v){ try{ const db=await KDB.open(); await new Promise(res=>{ const t=db.transaction('k','readwrite'); t.objectStore('k').put(v,'main'); t.oncomplete=res; t.onerror=res }) }catch(e){} },
+  async del(){ try{ const db=await KDB.open(); await new Promise(res=>{ const t=db.transaction('k','readwrite'); t.objectStore('k').delete('main'); t.oncomplete=res; t.onerror=res }) }catch(e){} }
+};
+async function loadBlob(){
+  if(window.EMBEDDED_BLOB) return window.EMBEDDED_BLOB;  // lokaal bestand: data zit erin
+  const r = await fetch('data.enc.json?t='+Date.now(), {cache:'no-store'});
+  if(!r.ok) throw new Error('Kon data niet laden ('+r.status+')');
+  return r.json();
+}
+
+/* ============================================================ state */
+const RANGES=[7,30,90,365];
+let DATA=null, RANGE=+(LS.get('gd-range')); if(!RANGES.includes(RANGE)) RANGE=30;
+const tip = $('#tip');
+
+/* ============================================================ tooltip */
+function showTip(html, x, y){
+  tip.innerHTML = html; tip.style.display='block';
+  const w = tip.offsetWidth, h = tip.offsetHeight, vw = innerWidth;
+  let left = x + 14; if(left + w > vw - 8) left = x - w - 14; if(left < 8) left = 8;
+  let top = y - h - 12; if(top < 8) top = y + 16;
+  tip.style.left = left+'px'; tip.style.top = top+'px';
+}
+const hideTip = ()=>{tip.style.display='none'};
+addEventListener('scroll', hideTip, {passive:true});
+const row = (label, val, color) => `<div class="r"><span>${color?`<i class="sw" style="background:${color}"></i>`:''}${esc(label)}</span><b class="num">${val}</b></div>`;
+
+/* ============================================================ chart core */
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag, attrs={}, parent){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function niceTicks(min,max,n=4){
+  if(min===max){max=min+1}
+  const span=max-min, step0=span/n, mag=10**Math.floor(Math.log10(step0)), r=step0/mag;
+  const step=(r<1.5?1:r<3?2:r<7?5:10)*mag; const t=[];
+  const lo=Math.floor(min/step)*step, hi=Math.ceil(max/step-1e-9)*step;
+  for(let v=lo; v<=hi+step*1e-6; v+=step) t.push(+v.toFixed(10));
+  return t;
+}
+/* frame: builds svg with y grid, x labels; returns scales */
+function frame(container, {xs, yMin, yMax, h=180, yFmt=v=>fmt(v), bandPad=false}){
+  container.innerHTML='';
+  const W = Math.max(260, container.clientWidth||320), H=h, m={l:34,r:8,t:8,b:22};
+  const svg = el('svg',{viewBox:`0 0 ${W} ${H}`, height:H, role:'img'}, container);
+  const ticks = niceTicks(yMin,yMax);
+  const y0 = ticks[0], y1 = ticks[ticks.length-1];
+  const iw=W-m.l-m.r, ih=H-m.t-m.b, n=xs.length;
+  const band = iw/Math.max(1,n);
+  const x = i => bandPad ? m.l + band*i + band/2 : m.l + (n<=1? iw/2 : iw*i/(n-1));
+  const y = v => m.t + ih - (v-y0)/(y1-y0||1)*ih;
+  ticks.forEach(t=>{ el('line',{x1:m.l,x2:W-m.r,y1:y(t),y2:y(t),class:'gridline'},svg);
+    const tx=el('text',{x:m.l-6,y:y(t)+3.5,'text-anchor':'end',class:'ax num'},svg); tx.textContent=yFmt(t); });
+  // x labels: ~5
+  const every = Math.max(1, Math.ceil(n/ (W<480?4:7)));
+  xs.forEach((s,i)=>{ if((n-1-i)%every) return; const tx=el('text',{x:x(i),y:H-5,'text-anchor':'middle',class:'ax'},svg); tx.textContent=s.lbl; });
+  return {svg,W,H,m,iw,ih,x,y,band,n,y0,y1};
+}
+/* hover overlay: picks nearest index */
+function hover(f, onIdx){
+  const r = el('rect',{x:f.m.l,y:f.m.t,width:f.iw,height:f.ih,fill:'transparent',style:'cursor:crosshair'},f.svg);
+  const cross = el('line',{y1:f.m.t,y2:f.m.t+f.ih,stroke:css('--text-3'),'stroke-width':1,'stroke-dasharray':'3 3',visibility:'hidden'},f.svg);
+  f.svg.insertBefore(cross, f.svg.firstChild.nextSibling);
+  const move = ev=>{
+    const b=f.svg.getBoundingClientRect(), sx=(ev.clientX-b.left)*(f.W/b.width);
+    let best=0,bd=1e9; for(let i=0;i<f.n;i++){const d=Math.abs(f.x(i)-sx); if(d<bd){bd=d;best=i}}
+    cross.setAttribute('x1',f.x(best)); cross.setAttribute('x2',f.x(best)); cross.setAttribute('visibility','visible');
+    const html=onIdx(best); if(html) showTip(html, ev.clientX, ev.clientY); else hideTip();
+  };
+  r.addEventListener('pointermove',move); r.addEventListener('pointerdown',move);
+  r.addEventListener('pointerleave',()=>{hideTip();cross.setAttribute('visibility','hidden')});
+}
+function linePath(f, vals){
+  let d='', pen=false;
+  vals.forEach((v,i)=>{ if(v==null){pen=false;return} d+=(pen?'L':'M')+f.x(i).toFixed(1)+' '+f.y(v).toFixed(1); pen=true; });
+  return d;
+}
+function lineChart(container, {xs, series, band, h, unit='', dec=0, yPad=0.08}){
+  const all = series.flatMap(s=>s.vals).filter(v=>v!=null);
+  if(band) all.push(band[0],band[1]);
+  if(!all.length){container.innerHTML='<div class="empty">Nog geen data</div>';return}
+  let lo=Math.min(...all), hi=Math.max(...all); const p=(hi-lo||1)*yPad; lo-=p; hi+=p;
+  const f = frame(container,{xs,yMin:lo,yMax:hi,h});
+  if(band){ el('rect',{x:f.m.l,width:f.iw,y:f.y(band[1]),height:Math.max(0,f.y(band[0])-f.y(band[1])),fill:series[0].color,opacity:.10},f.svg); }
+  series.forEach(s=>{
+    if(s.avg){ const a=mean(s.vals); if(a!=null) el('line',{x1:f.m.l,x2:f.W-f.m.r,y1:f.y(a),y2:f.y(a),stroke:s.color,'stroke-width':1,'stroke-dasharray':'2 4',opacity:.7},f.svg) }
+    el('path',{d:linePath(f,s.vals),fill:'none',stroke:s.color,'stroke-width':s.w||2,'stroke-linejoin':'round','stroke-linecap':'round',opacity:s.op||1},f.svg);
+    if(f.n<=45 && !s.noDots) s.vals.forEach((v,i)=>{ if(v!=null) el('circle',{cx:f.x(i),cy:f.y(v),r:3,fill:s.color,stroke:css('--surface'),'stroke-width':1.5},f.svg) });
+    else { // laatste punt markeren
+      for(let i=s.vals.length-1;i>=0;i--) if(s.vals[i]!=null){ el('circle',{cx:f.x(i),cy:f.y(s.vals[i]),r:4,fill:s.color,stroke:css('--surface'),'stroke-width':2},f.svg); break }
+    }
+  });
+  hover(f, i=>`<div class="t">${esc(xs[i].tip)}</div>`+series.map(s=>row(s.label, s.vals[i]==null?'–':fmt(s.vals[i],s.dec??dec)+(s.unit??unit), series.length>1?s.color:null)).join('')
+     + (band?row('Zone', fmt(band[0])+'–'+fmt(band[1])+unit):''));
+}
+function barChart(container, {xs, vals, color, goal, h, unit='', dec=0, colorFn, extra}){
+  const v=vals.filter(x=>x!=null); if(!v.length){container.innerHTML='<div class="empty">Nog geen data</div>';return}
+  const hi=Math.max(...v, goal||0)*1.05;
+  const f=frame(container,{xs,yMin:0,yMax:hi,h,bandPad:true});
+  const bw=Math.max(2,Math.min(22,f.band-2));
+  vals.forEach((val,i)=>{ if(val==null||val<=0) return;
+    const y=f.y(val), base=f.y(0), hgt=Math.max(1,base-y), r=Math.min(4,bw/2,hgt);
+    el('path',{d:roundedTop(f.x(i)-bw/2,y,bw,hgt,r),fill:colorFn?colorFn(val,i):color},f.svg);
+  });
+  if(goal){ el('line',{x1:f.m.l,x2:f.W-f.m.r,y1:f.y(goal),y2:f.y(goal),stroke:css('--text-2'),'stroke-width':1.5,'stroke-dasharray':'5 4'},f.svg) }
+  hover(f, i=>`<div class="t">${esc(xs[i].tip)}</div>`+row(xs[i].name||'Waarde', vals[i]==null?'–':fmt(vals[i],dec)+unit)+(goal?row('Doel',fmt(goal)+unit):'')+(extra?extra(i):''));
+}
+function roundedTop(x,y,w,h,r){return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`}
+function stackChart(container, {xs, keys, rows, h, unit='', dec=1, total=true}){
+  const tots=rows.map(r=>keys.reduce((s,k)=>s+(r[k.k]||0),0));
+  if(!tots.some(t=>t>0)){container.innerHTML='<div class="empty">Nog geen data</div>';return}
+  const f=frame(container,{xs,yMin:0,yMax:Math.max(...tots)*1.05,h,bandPad:true});
+  const bw=Math.max(2,Math.min(24,f.band-2)), surf=css('--surface');
+  rows.forEach((r,i)=>{ let acc=0; const segs=keys.filter(k=>(r[k.k]||0)>0);
+    segs.forEach((k,j)=>{ const v=r[k.k]; const yTop=f.y(acc+v), yBot=f.y(acc); acc+=v;
+      const hh=Math.max(0.5,yBot-yTop), last=j===segs.length-1;
+      el('path',{d:last?roundedTop(f.x(i)-bw/2,yTop,bw,hh,Math.min(3,bw/2,hh)):`M${f.x(i)-bw/2},${yTop}h${bw}v${hh}h${-bw}Z`,fill:k.color},f.svg);
+      if(!last && bw>4) el('line',{x1:f.x(i)-bw/2,x2:f.x(i)+bw/2,y1:yTop,y2:yTop,stroke:surf,'stroke-width':1.5},f.svg);
+    });
+  });
+  hover(f,i=>`<div class="t">${esc(xs[i].tip)}</div>`+keys.slice().reverse().map(k=>row(k.label,fmt(rows[i][k.k]||0,dec)+unit,k.color)).join('')+(total?row('Totaal',fmt(tots[i],dec)+unit):''));
+}
+function rangeChart(container, {xs, lo, hi, color, h, unit=''}){
+  const v=[...lo,...hi].filter(x=>x!=null); if(!v.length){container.innerHTML='<div class="empty">Nog geen data</div>';return}
+  const f=frame(container,{xs,yMin:0,yMax:100,h,bandPad:true});
+  const bw=Math.max(2,Math.min(14,f.band-3));
+  xs.forEach((_,i)=>{ if(hi[i]==null) return; const a=f.y(hi[i]), b=f.y(lo[i]??hi[i]);
+    el('rect',{x:f.x(i)-bw/2,y:a,width:bw,height:Math.max(2,b-a),rx:Math.min(4,bw/2),fill:color},f.svg)});
+  hover(f,i=>`<div class="t">${esc(xs[i].tip)}</div>`+row('Hoogste',fmt(hi[i])+unit)+row('Laagste',fmt(lo[i])+unit));
+}
+function sparkline(vals, color){
+  const v=vals.filter(x=>x!=null); if(v.length<2) return '';
+  const lo=Math.min(...v), hi=Math.max(...v), n=vals.length, W=100, H=28;
+  let d='',pen=false; vals.forEach((x,i)=>{ if(x==null){pen=false;return} const px=i/(n-1)*W, py=H-3-((x-lo)/(hi-lo||1))*(H-6); d+=(pen?'L':'M')+px.toFixed(1)+' '+py.toFixed(1); pen=true});
+  return `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+}
+function dataTable(container, head, rows){
+  container.innerHTML = `<details class="table"><summary>Toon als tabel</summary><div class="tablewrap"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`;
+}
+
+/* ============================================================ domain */
+const SPORT = {tennis:'Tennis',bouldering:'Boulderen',indoor_climbing:'Klimmen',rock_climbing:'Klimmen',climbing:'Klimmen',
+  running:'Lopen',treadmill_running:'Loopband',trail_running:'Trail',cycling:'Fietsen',road_biking:'Fietsen',indoor_cycling:'Indoor fietsen',
+  mountain_biking:'MTB',walking:'Wandelen',hiking:'Hiken',strength_training:'Kracht',lap_swimming:'Zwemmen',open_water_swimming:'Zwemmen',
+  swimming:'Zwemmen',yoga:'Yoga',padel:'Padel',fitness_equipment:'Fitness',cardio:'Cardio',hiit:'HIIT',other:'Overig'};
+const sportName = t => SPORT[t] || (t||'overig').replace(/_/g,' ').replace(/^./,c=>c.toUpperCase());
+const CAT = ['--s1','--s2','--s3'];
+let sportColors = {};
+
+function computeSportOrder(){
+  const tot={}; DATA.activities.forEach(a=>{const n=sportName(a.type); tot[n]=(tot[n]||0)+(a.durMin||0)});
+  const order=Object.entries(tot).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  sportColors={}; order.forEach((n,i)=>{ sportColors[n]= i<3 ? css(CAT[i]) : css('--other') });
+  return {order, top:order.slice(0,3), tot};
+}
+
+function lastWith(key){ for(let i=DATA.days.length-1;i>=0;i--){const d=DATA.days[i]; if(d[key]!=null) return {v:d[key], d:d.d, i}} return null }
+function baseline(key, endIdx, n=30){ const s=DATA.days.slice(Math.max(0,endIdx-n), endIdx).map(d=>d[key]); return median(s) }
+
+function whenLabel(ds){ const t=isoD(new Date()); if(ds===t) return 'vandaag'; if(ds===addDays(t,-1)) return 'gisteren'; return dLong(ds) }
+
+/* ============================================================ render */
+function renderTiles(){
+  const defs = [
+    {k:'sleepScore', l:'Slaapscore', u:'', better:+1, c:'--s1', when:'vannacht'},
+    {k:'hrv', l:'HRV', u:' ms', better:+1, c:'--s3', when:'vannacht'},
+    {k:'rhr', l:'Rusthartslag', u:' bpm', better:-1, c:'--s2'},
+    {k:'bbHigh', l:'Body Battery', u:'', better:+1, c:'--s1'},
+    {k:'stressAvg', l:'Stress', u:'', better:-1, c:'--s7', prevDay:true},
+    {k:'steps', l:'Stappen', u:'', better:+1, c:'--s3', prevDay:true},
+  ];
+  const out = defs.map(df=>{
+    let last = lastWith(df.k);
+    if(df.prevDay && last && last.d===isoD(new Date())){ // vandaag is nog niet af
+      const prev = DATA.days[last.i-1]; if(prev && prev[df.k]!=null) last={v:prev[df.k],d:prev.d,i:last.i-1};
+    }
+    if(!last) return `<div class="tile"><div class="lbl">${df.l}</div><div class="val">–</div><div class="when">geen data</div></div>`;
+    const base = baseline(df.k, last.i);
+    let delta='';
+    if(base!=null && base!==0){
+      const diff = last.v-base, pct = diff/base*100, good = diff*df.better>0, small=Math.abs(pct)<3;
+      const col = small? css('--text-3') : good? css('--good') : css('--bad');
+      const icon = small? '=' : diff>0? '▲':'▼';
+      delta = `<div class="delta"><span class="badge" style="background:${col}" aria-hidden="true">${icon}</span><span class="num">${diff>0?'+':''}${fmt(diff, Math.abs(diff)<10&&df.k!=='steps'?1:0)}</span><span>${small?'gelijk':good?'beter':'minder'}</span></div>`;
+    }
+    const spark = sparkline(DATA.days.slice(-14).map(d=>d[df.k]), css(df.c));
+    const when = df.when && last.d>=addDays(isoD(new Date()),-1) ? df.when : whenLabel(last.d);
+    return `<div class="tile" title="Normaal = mediaan van de 30 dagen ervoor: ${fmt(base, df.k==='hrv'||df.k==='rhr'?0:0)}${df.u}">
+      <div class="lbl">${df.l}</div><div class="val num">${fmt(last.v)}<small>${df.u.trim()}</small></div>${delta}${spark}<div class="when">${when} · normaal ${fmt(base)}</div></div>`;
+  });
+  $('#tiles').innerHTML = out.join('');
+}
+
+function sliceDays(){
+  const t=isoD(new Date()), start=addDays(t,-(RANGE-1)); const map=new Map(DATA.days.map(d=>[d.d,d]));
+  const arr=[]; for(let i=0;i<RANGE;i++){const s=addDays(start,i); arr.push(map.get(s)||{d:s})}
+  return arr;
+}
+const xsOf = days => days.map(d=>({lbl:dLabel(d.d), tip:dLong(d.d)}));
+function weeks(days){
+  const m=new Map(); days.forEach(d=>{const k=weekKey(d.d); if(!m.has(k)) m.set(k,[]); m.get(k).push(d)});
+  return [...m.entries()].map(([k,v])=>({k, days:v}));
+}
+
+function renderRecovery(days){
+  const xs=xsOf(days), useWeeks = RANGE>=365;
+  const keys=[{k:'deep',label:'Diep',color:css('--s7')},{k:'light',label:'Licht',color:css('--s1')},{k:'rem',label:'REM',color:css('--s5')},{k:'awake',label:'Wakker',color:css('--other')}];
+  $('#sleepLegend').innerHTML = keys.map(k=>`<span><i style="background:${k.color}"></i>${k.label}</span>`).join('');
+  let rows=days.map(d=>({deep:hrs(d.deepSec),light:hrs(d.lightSec),rem:hrs(d.remSec),awake:hrs(d.awakeSec), tot:hrs(d.sleepSec)}));
+  rows.forEach(r=>{ if(r.deep==null && r.tot!=null) r.light=r.tot });
+  let sx=xs;
+  if(useWeeks){ const w=weeks(days); sx=w.map(x=>({lbl:dLabel(x.k),tip:'Week van '+dLong(x.k)+' (gem./nacht)'}));
+    rows=w.map(x=>{const o={}; keys.forEach(k=>{o[k.k]=mean(x.days.map(d=>hrs(d[k.k==='light'?'lightSec':k.k+'Sec'])))||0}); return o}); }
+  stackChart($('#chSleep'),{xs:sx,keys,rows,h:200,unit:' u',dec:1});
+  $('#sleepAvg').textContent = hm(mean(days.map(d=>hrs(d.sleepSec))));
+  dataTable($('#tblSleep'),['Nacht','Totaal','Diep','REM','Score','Bedtijd'],
+    days.slice().reverse().filter(d=>d.sleepSec).map(d=>[dLong(d.d),hm(hrs(d.sleepSec)),hm(hrs(d.deepSec)),hm(hrs(d.remSec)),fmt(d.sleepScore),d.bedtime||'–']));
+
+  lineChart($('#chScore'),{xs,series:[{label:'Slaapscore',vals:days.map(d=>d.sleepScore),color:css('--s1'),avg:true}],h:200});
+  $('#scoreAvg').textContent = fmt(mean(days.map(d=>d.sleepScore)));
+
+  const lastBand = lastWith('hrvHigh'), lastLow=lastWith('hrvLow');
+  lineChart($('#chHrv'),{xs,unit:' ms',band:lastBand&&lastLow?[lastLow.v,lastBand.v]:null,
+    series:[{label:'HRV',vals:days.map(d=>d.hrv),color:css('--s3')},{label:'7-daags gem.',vals:days.map(d=>d.hrvWeekly),color:css('--text-3'),w:1.5,noDots:true}]});
+  $('#hrvAvg').textContent = fmt(mean(days.map(d=>d.hrv)))+' ms';
+
+  lineChart($('#chRhr'),{xs,unit:' bpm',series:[{label:'Rusthartslag',vals:days.map(d=>d.rhr),color:css('--s2'),avg:true}]});
+  $('#rhrAvg').textContent = fmt(mean(days.map(d=>d.rhr)))+' bpm';
+}
+
+function renderEnergy(days){
+  const xs=xsOf(days);
+  rangeChart($('#chBb'),{xs,lo:days.map(d=>d.bbLow),hi:days.map(d=>d.bbHigh),color:css('--s1')});
+  $('#bbAvg').textContent = 'piek ø '+fmt(mean(days.map(d=>d.bbHigh)));
+  barChart($('#chStress'),{xs,vals:days.map(d=>d.stressAvg),color:css('--s7'),
+    extra:i=>days[i].stressHighMin!=null?row('Hoge stress',fmt(days[i].stressHighMin)+' min'):''});
+  $('#stressAvg').textContent = 'ø '+fmt(mean(days.map(d=>d.stressAvg)));
+}
+
+function renderTraining(days, sp){
+  const start=days[0].d, acts=DATA.activities.filter(a=>a.start.slice(0,10)>=start);
+  const keys=[...sp.top.map(n=>({k:n,label:n,color:sportColors[n]}))];
+  if(sp.order.length>3) keys.push({k:'__rest',label:sp.top.includes('Overig')?'Rest':'Overig',color:css('--other')});
+  $('#trainLegend').innerHTML = keys.map(k=>`<span><i style="background:${k.color}"></i>${esc(k.label)}</span>`).join('');
+  // per week (7/30 d: per dag bij 7 d)
+  const perDay = RANGE<=7;
+  const buckets = perDay ? days.map(d=>({k:d.d,lbl:dLabel(d.d),tip:dLong(d.d)})) :
+     weeks(days).map(w=>({k:w.k,lbl:dLabel(w.k),tip:'Week van '+dLong(w.k)}));
+  const rows = buckets.map(()=>({}));
+  const idx = new Map(buckets.map((b,i)=>[b.k,i]));
+  acts.forEach(a=>{ const d=a.start.slice(0,10), k=perDay?d:weekKey(d), i=idx.get(k); if(i==null) return;
+    const n=sportName(a.type), key=sp.top.includes(n)?n:'__rest'; rows[i][key]=(rows[i][key]||0)+(a.durMin||0)/60; });
+  stackChart($('#chTrain'),{xs:buckets,keys,rows,h:200,unit:' u',dec:1});
+  $('#trainSum').textContent = fmt(acts.reduce((s,a)=>s+(a.durMin||0),0)/60,1)+' u';
+
+  $('#acts').innerHTML = DATA.activities.slice(0,7).map(a=>{const n=sportName(a.type);
+    return `<li><span class="dot" style="background:${sportColors[n]||css('--other')}"></span><div style="min-width:0"><div class="nm">${esc(a.name||n)}</div>
+    <div class="meta">${dLong(a.start.slice(0,10))} · ${a.start.slice(11,16)}</div></div>
+    <div class="rt num">${a.durMin?Math.round(a.durMin)+' min':''}${a.distKm?'<br>'+fmt(a.distKm,1)+' km':a.avgHr?'<br>♥ '+a.avgHr:''}</div></li>`}).join('') || '<li class="empty">Nog geen activiteiten</li>';
+
+  // belasting per week
+  const wk = weeks(days.length>=56?days:sliceN(56));
+  const loads = wk.map(w=>{const ks=new Set(w.days.map(d=>d.d)); return DATA.activities.filter(a=>ks.has(a.start.slice(0,10))).reduce((s,a)=>s+(a.load||0),0)});
+  barChart($('#chLoad'),{xs:wk.map(w=>({lbl:dLabel(w.k),tip:'Week van '+dLong(w.k)})),vals:loads,color:css('--s2'),name:'Belasting'});
+  const t=isoD(new Date()); const sumLoad=(a,b)=>DATA.activities.filter(x=>{const d=x.start.slice(0,10);return d>a&&d<=b}).reduce((s,x)=>s+(x.load||0),0);
+  const acute=sumLoad(addDays(t,-7),t), chronic=sumLoad(addDays(t,-35),addDays(t,-7))/4;
+  $('#loadRatio').textContent = chronic>0 ? fmt(acute/chronic*100)+'%' : '–';
+
+  const v = DATA.activities.filter(a=>a.vo2).slice().reverse();
+  if(v.length){ const vx=v.map(a=>({lbl:dLabel(a.start.slice(0,10)),tip:dLong(a.start.slice(0,10))+' · '+(a.name||'')}));
+    lineChart($('#chVo2'),{xs:vx,series:[{label:'VO2max',vals:v.map(a=>a.vo2),color:css('--s3'),dec:1,noDots:v.length>45}],dec:1});
+    $('#vo2Now').textContent = fmt(v[v.length-1].vo2,1);
+  } else { $('#chVo2').innerHTML='<div class="empty">Geen VO2max-metingen (enkel bij lopen/fietsen met hartslag)</div>';
+    $('#vo2Now').textContent = DATA.profile&&DATA.profile.vo2Run?fmt(DATA.profile.vo2Run,1):''; }
+}
+function sliceN(n){const t=isoD(new Date()), map=new Map(DATA.days.map(d=>[d.d,d])); const a=[]; for(let i=n-1;i>=0;i--){const s=addDays(t,-i);a.push(map.get(s)||{d:s})} return a}
+
+function renderDaily(days){
+  const xs=xsOf(days); const goal = lastWith('stepGoal');
+  barChart($('#chSteps'),{xs,vals:days.map(d=>d.steps),goal:goal?goal.v:null,name:'Stappen',
+    colorFn:(v)=> goal && v>=goal.v ? css('--s3') : css('--s1'),
+    extra:i=>days[i].distKm?row('Afstand',fmt(days[i].distKm,1)+' km'):''});
+  $('#stepsAvg').textContent = 'ø '+fmt(mean(days.map(d=>d.steps)));
+  const wk=weeks(RANGE<28?sliceN(56):days);
+  const im=wk.map(w=>w.days.reduce((s,d)=>s+(d.intensityMin||0),0));
+  barChart($('#chIm'),{xs:wk.map(w=>({lbl:dLabel(w.k),tip:'Week van '+dLong(w.k)})),vals:im,goal:150,name:'Minuten',
+    colorFn:v=>v>=150?css('--s3'):css('--s1')});
+  $('#imWeek').textContent = fmt(im[im.length-1]||0)+' deze week';
+}
+
+function renderFacts(sp){
+  const D=DATA.days, F=[];
+  const fa=DATA.fitnessAge||{};
+  if(fa.fitnessAge!=null) F.push({k:'Fitnessleeftijd',v:fmt(fa.fitnessAge,1)+' jaar',s:fa.chronologicalAge?`Je bent ${fa.chronologicalAge}: lichaam ${fmt(fa.chronologicalAge-fa.fitnessAge,1)} jaar jonger dan je paspoort.${fa.achievable?' Haalbaar: '+fmt(fa.achievable,1)+'.':''}`:''});
+  // stappenreeks
+  const g=lastWith('stepGoal'); if(g){ let cur=0,best=0,run=0; const t=isoD(new Date());
+    D.forEach(d=>{ if(d.d===t) return; if(d.steps!=null&&d.steps>=(d.stepGoal||g.v)){run++;best=Math.max(best,run)} else run=0 }); cur=run;
+    F.push({k:'Stappendoel-reeks',v:cur+' dagen',s:`Record in deze periode: ${best} dagen op rij.`}); }
+  // afstand
+  const km=D.reduce((s,d)=>s+(d.distKm||0),0);
+  if(km>0){ const n=D.filter(d=>d.distKm).length; F.push({k:`Gestapt in ${n} dagen`,v:fmt(km)+' km',s:`≈ ${fmt(km/45,1)}× Antwerpen–Brussel, of ${fmt(km/40075*100,1)}% rond de aarde.`}) }
+  // beste nacht
+  const nights=D.filter(d=>d.sleepScore!=null).slice(-90);
+  if(nights.length){ const b=nights.reduce((a,c)=>c.sleepScore>a.sleepScore?c:a); F.push({k:'Beste nacht (90 d)',v:fmt(b.sleepScore),s:`${dLong(b.d)}: ${hm(hrs(b.sleepSec))} geslapen${b.bedtime?', in bed om '+b.bedtime:''}.`}) }
+  // bedtijd-regelmaat
+  const bt=D.slice(-30).map(d=>d.bedtime).filter(Boolean).map(t=>{let [h,m]=t.split(':').map(Number); let v=h*60+m; if(v<12*60) v+=24*60; return v});
+  if(bt.length>=7){ const m=mean(bt), s=sd(bt); const mm=Math.round(m)%(24*60);
+    F.push({k:'Bedtijd (30 d)',v:String(Math.floor(mm/60)).padStart(2,'0')+':'+String(mm%60).padStart(2,'0'),s:`Gemiddeld, met ±${fmt(s)} min spreiding. Onder 30 min geldt als regelmatig.`}) }
+  // HRV na training vs rust
+  const actDays=new Set(DATA.activities.filter(a=>(a.durMin||0)>=20).map(a=>a.start.slice(0,10)));
+  const after=[],rest=[]; D.slice(-90).forEach(d=>{ if(d.hrv==null) return; (actDays.has(addDays(d.d,-1))?after:rest).push(d.hrv) });
+  if(after.length>=5&&rest.length>=5){ const a=mean(after), r=mean(rest);
+    F.push({k:'HRV na een trainingsdag',v:(a>=r?'+':'')+fmt(a-r,1)+' ms',s:`Gem. ${fmt(a)} ms na training (${after.length} n.) vs. ${fmt(r)} ms na rustdag (${rest.length} n.). Observatie, geen oorzaak.`}) }
+  // zwaarste dag
+  const st=D.filter(d=>d.stressAvg!=null).slice(-90);
+  if(st.length){ const x=st.reduce((a,c)=>c.stressAvg>a.stressAvg?c:a); F.push({k:'Drukste dag (90 d)',v:fmt(x.stressAvg)+' stress',s:`${dLong(x.d)}. Body Battery zakte toen tot ${fmt(x.bbLow)}.`}) }
+  // sport van het jaar
+  if(sp.order.length){ const n=sp.order[0], cnt=DATA.activities.filter(a=>sportName(a.type)===n).length;
+    F.push({k:'Sport van het jaar',v:n,s:`${cnt} sessies, ${fmt(sp.tot[n]/60)} uur in totaal.`}) }
+  // spo2 / ademhaling
+  const sp2=lastWith('spo2Avg'), resp=lastWith('respiration');
+  if(sp2||resp) F.push({k:'Zuurstof & ademhaling',v:sp2?fmt(sp2.v,1)+'% SpO₂':fmt(resp.v,1)+' /min',s:[sp2&&sp2.v&&lastWith('spo2Low')?'Laagste: '+fmt(lastWith('spo2Low').v)+'%':'' , resp?'Ademhaling in slaap: '+fmt(resp.v,1)+' per minuut':''].filter(Boolean).join('. ')+'.'});
+  $('#facts').innerHTML = F.map(f=>`<div class="fact"><div class="k">${esc(f.k)}</div><div class="v num">${esc(f.v)}</div><div class="s">${esc(f.s)}</div></div>`).join('') || '<div class="empty">Nog te weinig data</div>';
+
+  // weekdag
+  const wd=[1,2,3,4,5,6,0].map(i=>{const v=D.slice(-90).filter(d=>parseD(d.d).getDay()===i).map(d=>d.sleepScore); return {i,l:DOW[i],m:mean(v)}});
+  // de score van 'nacht van X' hoort bij de dag van wakker worden; we tonen de avond ervoor
+  const wdN=[1,2,3,4,5,6,0].map(i=>{const v=D.slice(-90).filter(d=>parseD(addDays(d.d,-1)).getDay()===i).map(d=>d.sleepScore); return {l:DOW[i]+'→'+DOW[(i+1)%7],m:mean(v)}});
+  const mx=Math.max(...wdN.map(w=>w.m||0),1);
+  $('#weekday').innerHTML = wdN.every(w=>w.m==null)?'<div class="empty">Nog geen slaapscores</div>':
+    wdN.map(w=>`<div class="hbar"><span>${w.l}</span><div class="track"><div class="fill" style="width:${(w.m||0)/mx*100}%;background:${css('--s1')}"></div></div><span class="n num">${fmt(w.m)}</span></div>`).join('');
+
+  // sportverdeling
+  const tot=Object.values(sp.tot).reduce((s,x)=>s+x,0);
+  $('#sportSplit').innerHTML = sp.order.slice(0,6).map(n=>`<div class="hbar"><span>${esc(n)}</span><div class="track"><div class="fill" style="width:${sp.tot[n]/sp.tot[sp.order[0]]*100}%;background:${sportColors[n]}"></div></div><span class="n num">${fmt(sp.tot[n]/60)} u</span></div>`).join('')
+    + (sp.order.length?`<div class="hint" style="margin-top:8px">Totaal ${fmt(tot/60)} uur over ${DATA.activities.length} activiteiten</div>`:'<div class="empty">Nog geen activiteiten</div>');
+}
+
+function renderHeatmap(){
+  const c=$('#heatmap'); const t=isoD(new Date());
+  const mins={}; DATA.activities.forEach(a=>{const d=a.start.slice(0,10); mins[d]=(mins[d]||0)+(a.durMin||0)});
+  const end=parseD(t), start=parseD(addDays(t,-363)); start.setDate(start.getDate()-((start.getDay()+6)%7));
+  const cells=[]; for(let d=new Date(start), i=0; d<=end; d.setDate(d.getDate()+1), i++) cells.push({d:isoD(d), w:Math.floor(i/7), r:(d.getDay()+6)%7});
+  const nW=cells[cells.length-1].w+1, W=Math.max(300,c.clientWidth||600), gap=2, cs=Math.max(4,Math.min(14,(W-24)/nW-gap)), H=7*(cs+gap)+16;
+  const steps=['--seq0','--seq1','--seq2','--seq3','--seq4','--seq5'].map(css);
+  const lvl=m=>!m?0:m<30?1:m<60?2:m<90?3:m<120?4:5;
+  let s=`<svg class="hm" viewBox="0 0 ${24+nW*(cs+gap)} ${H}" role="img" aria-label="Activiteitenkalender">`;
+  ['ma','','wo','','vr','','zo'].forEach((l,r)=>{ if(l) s+=`<text x="0" y="${16+r*(cs+gap)+cs-1}" class="ax">${l}</text>` });
+  let lastM=-1; cells.forEach(x=>{ const m=parseD(x.d).getMonth(); if(x.r===0&&m!==lastM){lastM=m; s+=`<text x="${24+x.w*(cs+gap)}" y="10" class="ax">${MON[m]}</text>`}
+    s+=`<rect data-d="${x.d}" x="${24+x.w*(cs+gap)}" y="${16+x.r*(cs+gap)}" width="${cs}" height="${cs}" rx="2" fill="${steps[lvl(mins[x.d])]}"/>` });
+  s+='</svg>';
+  c.innerHTML = s + `<div class="legend" style="margin-top:6px">${['0','<30','30–60','60–90','90–120','120+'].map((l,i)=>`<span><i style="background:${steps[i]}"></i>${l}</span>`).join('')} <span>min</span></div>`;
+  const svg=c.querySelector('svg');
+  const mv=ev=>{const r=ev.target.closest('rect'); if(!r) return hideTip(); const d=r.dataset.d;
+    const list=DATA.activities.filter(a=>a.start.slice(0,10)===d);
+    showTip(`<div class="t">${dLong(d)}</div>`+(list.length?list.map(a=>row(a.name||sportName(a.type),Math.round(a.durMin||0)+' min',sportColors[sportName(a.type)])).join(''):'<div class="r">Rustdag</div>'),ev.clientX,ev.clientY)};
+  svg.addEventListener('pointermove',mv); svg.addEventListener('pointerdown',mv); svg.addEventListener('pointerleave',hideTip);
+}
+
+function renderHeader(){
+  const now=new Date(); $('#today').textContent = DOW[now.getDay()]+'dag '+now.getDate()+' '+MON[now.getMonth()]+' '+now.getFullYear();
+  $('#today').textContent = now.toLocaleDateString('nl-BE',{weekday:'long',day:'numeric',month:'long'});
+  const h=now.getHours(); $('#greet').textContent = h<6?'Goeienacht':h<12?'Goeiemorgen':h<18?'Goeiemiddag':'Goeienavond';
+  const gen=new Date(DATA.generated), age=(now-gen)/36e5, B=[];
+  if(DATA.demo) B.push(`<div class="banner"><span class="dot" style="background:${css('--warn')}"></span><div><b>Demodata.</b> Dit zijn verzonnen cijfers om het dashboard te testen.</div></div>`);
+  if(age>36) B.push(`<div class="banner"><span class="dot" style="background:${css('--bad')}"></span><div><b>Laatste sync is ${fmt(age/24,0)} dag(en) oud.</b> Kijk in je GitHub-repo bij <b>Actions</b> welke run faalt. Is je Garmin-sleutel misschien verlopen?</div></div>`);
+  else if(DATA.dataThrough && (now-parseD(DATA.dataThrough))/864e5>2.5) B.push(`<div class="banner"><span class="dot" style="background:${css('--warn')}"></span><div><b>Nieuwste Garmin-data is van ${dLong(DATA.dataThrough)}.</b> Je horloge synchroniseert misschien niet met Garmin Connect.</div></div>`);
+  $('#banners').innerHTML=B.join('');
+  const cov=Object.entries(DATA.coverage||{}).map(([k,v])=>`${esc(k)}: ${esc(v)}`).join(' · ');
+  $('#foot').innerHTML = `Laatste sync: ${gen.toLocaleString('nl-BE',{dateStyle:'medium',timeStyle:'short'})} · ${DATA.days.length} dagen · ${DATA.activities.length} activiteiten<br>Bronnen: ${cov||'–'}<br>Bron: Garmin Connect Personal API. Geen medisch advies.`;
+}
+
+function renderAll(){
+  if(!DATA) return;
+  document.querySelectorAll('#range button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.r===RANGE));
+  const days=sliceDays(), sp=computeSportOrder();
+  renderHeader(); renderTiles(); renderRecovery(days); renderEnergy(days); renderTraining(days,sp); renderDaily(days); renderFacts(sp); renderHeatmap();
+}
+
+/* ============================================================ wiring */
+$('#range').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; RANGE=+b.dataset.r; LS.set('gd-range',RANGE); renderAll()});
+let rt, lastW=innerWidth; addEventListener('resize',()=>{ if(innerWidth===lastW) return; lastW=innerWidth; clearTimeout(rt); rt=setTimeout(renderAll,150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>renderAll());
+const savedTheme=LS.get('gd-theme'); if(savedTheme) document.documentElement.dataset.theme=savedTheme;
+$('#themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const nx=cur==='dark'?'light':'dark'; document.documentElement.dataset.theme=nx; LS.set('gd-theme',nx); renderAll();
+});
+$('#lockBtn').addEventListener('click',async()=>{ DATA=null; LS.del('gd-pw'); await KDB.del(); $('#app').hidden=true; $('#lock').hidden=false; $('#pw').value=''; });
+
+function showApp(){ $('#lock').hidden=true; $('#app').hidden=false; renderAll() }
+async function unlock(pw, remember){
+  const btn=$('#unlockBtn'); btn.disabled=true; btn.textContent='Bezig…'; $('#err').textContent='';
+  try{
+    const blob=await loadBlob();
+    const key=await deriveKey(pw, blob);
+    DATA=await decryptWithKey(blob,key);
+    if(remember) await KDB.set({salt:blob.salt, iter:blob.iter, key}); else await KDB.del();
+    showApp();
+  }catch(e){
+    $('#err').textContent = e.name==='OperationError' ? 'Verkeerd wachtwoord.' : (e.message||'Er ging iets mis.');
+  }finally{ btn.disabled=false; btn.textContent='Ontgrendelen' }
+}
+async function autoUnlock(){
+  LS.del('gd-pw'); // oude versie bewaarde het wachtwoord zelf: opruimen
+  const saved=await KDB.get(); if(!saved) return;
+  $('#remember').checked=true; $('#err').textContent='Laden…';
+  try{
+    const blob=await loadBlob();
+    if(blob.salt!==saved.salt || blob.iter!==saved.iter){ await KDB.del(); $('#err').textContent='Wachtwoord gewijzigd: log opnieuw in.'; return }
+    DATA=await decryptWithKey(blob, saved.key); $('#err').textContent=''; showApp();
+  }catch(e){
+    if(e.name==='OperationError'){ await KDB.del(); $('#err').textContent='Log opnieuw in.' }
+    else $('#err').textContent=(e.message||'Geen verbinding.')+' Probeer later opnieuw.';  // sleutel blijft bewaard
+  }
+}
+$('#lockForm').addEventListener('submit',e=>{e.preventDefault(); unlock($('#pw').value, $('#remember').checked)});
+autoUnlock();
+if(!window.crypto||!crypto.subtle){ $('#err').textContent='Deze browser ondersteunt geen versleuteling (open via https).' }
+</script>
+</body>
+</html>
