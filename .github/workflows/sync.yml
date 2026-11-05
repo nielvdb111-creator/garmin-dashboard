@@ -1,0 +1,65 @@
+name: Garmin sync
+
+on:
+  schedule:
+    # UTC-tijden: 06:20, 12:20 en 21:20 in de winter (een uur later in de zomer)
+    - cron: "20 5,11,20 * * *"
+  workflow_dispatch:
+    inputs:
+      schema:
+        description: "Alleen de structuur van de Garmin-antwoorden tonen (geen waarden)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: garmin-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Pakketten installeren
+        run: pip install -r requirements.txt
+
+      - name: Vorige stand ophalen (versleuteld)
+        run: |
+          mkdir -p prev
+          if git fetch --depth 1 origin gh-pages 2>/dev/null; then
+            git --work-tree=prev checkout FETCH_HEAD -- . || true
+          fi
+
+      - name: Garmin-data ophalen en versleutelen
+        env:
+          GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
+          GARMIN_DASH_PASSPHRASE: ${{ secrets.GARMIN_DASH_PASSPHRASE }}
+        run: |
+          if [ "${{ inputs.schema }}" = "true" ]; then
+            python garmin_sync.py --ci --schema
+          else
+            python garmin_sync.py --ci --prev-dir prev --out-dir public
+          fi
+
+      - name: Publiceren naar gh-pages (zonder geschiedenis)
+        if: ${{ inputs.schema != true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd public
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "update"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
