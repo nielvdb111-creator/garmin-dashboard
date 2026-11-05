@@ -350,6 +350,9 @@ def norm_activity(a: dict) -> dict | None:
         "anTE": round_or_none(fnum(a, "anaerobicTrainingEffect"), 1),
         "vo2": round_or_none(fnum(a, "vO2MaxValue", "vo2MaxValue"), 1),
         "elev": round_or_none(fnum(a, "elevationGain")),
+        "teLabel": find(a, "trainingEffectLabel", "aerobicTrainingEffectMessage") if isinstance(
+            find(a, "trainingEffectLabel", "aerobicTrainingEffectMessage"), str) else None,
+        "plan": True if find(a, "workoutId", "associatedWorkoutId", "workoutUuid", depth=1) else None,
     }
     if not out["start"] or len(out["start"]) < 10:
         return None
@@ -670,6 +673,58 @@ def shape(v: Any, depth: int = 0) -> Any:
     return type(v).__name__
 
 
+def probe_training(client: Any) -> dict:
+    """Test of trainingsplan/kalender/racevoorspelling via de Personal API bereikbaar zijn.
+
+    Geeft enkel structuur en HTTP-status terug, nooit waarden.
+    """
+    out: dict[str, Any] = {}
+
+    def tryget(name: str, fn: Callable[[], Any]) -> Any:
+        try:
+            res = fn()
+            out[name] = shape(res)
+            return res
+        except Exception as exc:  # noqa: BLE001
+            out[name] = f"FOUT: {getattr(exc, 'status_code', '')} {type(exc).__name__}"
+            return None
+
+    t = date.today()
+    acts = tryget("recentActivities", lambda: client.search_activities(limit=40)) or []
+    acts = [a for a in as_list(acts, "activityList") if isinstance(a, dict)]
+    runs = [a for a in acts if "run" in str(find(a, "typeKey") or "")]
+    out["info"] = {"aantalRuns": len(runs),
+                   "runsMetWorkoutVeld": sum(1 for a in runs if find(a, "workoutId", "associatedWorkoutId",
+                                                                       "workoutUuid", depth=1))}
+    if runs:
+        rid = find(runs[0], "activityId")
+        tryget("run.activity", lambda: client.get_activity(rid))
+        tryget("run.workouts", lambda: client.get_activity_workouts(rid))
+        planned = [a for a in runs if find(a, "workoutId", "associatedWorkoutId", depth=1)]
+        if planned:
+            pid = find(planned[0], "activityId")
+            tryget("planRun.workouts", lambda: client.get_activity_workouts(pid))
+    plans = tryget("trainingPlans", lambda: client.get("/trainingplan-service/trainingplan/plans"))
+    plan_id = find(plans, "trainingPlanId", "planId") if plans else None
+    if plan_id:
+        tryget("plan.phased", lambda: client.get(f"/trainingplan-service/trainingplan/phased/{plan_id}"))
+        tryget("plan.adaptive", lambda: client.get(f"/trainingplan-service/trainingplan/fbt-adaptive/{plan_id}"))
+    tryget("calendar.m0", lambda: client.get(f"/calendar-service/year/{t.year}/month/{t.month - 1}"))
+    tryget("calendar.m1", lambda: client.get(f"/calendar-service/year/{t.year}/month/{t.month}"))
+    tryget("workouts", lambda: client.get("/workout-service/workouts", params={"start": 0, "limit": 5}))
+    tryget("trainingStatus", lambda: client.get(f"/metrics-service/metrics/trainingstatus/aggregated/{iso(t)}"))
+    social = None
+    try:
+        social = client.get("/userprofile-service/socialProfile")
+        out["socialProfile"] = "ok"
+    except Exception as exc:  # noqa: BLE001
+        out["socialProfile"] = f"FOUT: {getattr(exc, 'status_code', '')}"
+    name = find(social, "displayName") if social else None
+    if name:
+        tryget("racePredictions", lambda: client.get(f"/metrics-service/metrics/racepredictions/latest/{name}"))
+    return out
+
+
 def dump_schema(client: Any) -> Path:
     t = date.today()
     y = t - timedelta(days=1)
@@ -694,6 +749,7 @@ def dump_schema(client: Any) -> Path:
             out[name] = shape(fn())
         except Exception as exc:  # noqa: BLE001
             out[name] = f"FOUT: {getattr(exc, 'status_code', '')} {type(exc).__name__}"
+    out["probes"] = probe_training(client)
     path = APP_DIR / "schema.json"
     path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     return path
@@ -760,6 +816,25 @@ def demo_data(cfg: dict) -> dict:
                  "vo2": round(49 + (cfg["activity_days"] - i) * 0.006 + rnd.gauss(0, 0.3), 1) if key == "running" else None}
             acts.append({k: v for k, v in a.items() if v is not None})
             aid += 1
+        # marathonblok: lange duurloop op zondag + 2 plan-runs in de week (laatste 16 weken)
+        if i < 112 and d.weekday() in (1, 3, 6):
+            wk = (112 - i) / 112
+            if d.weekday() == 6:
+                km, pace, lbl = 14 + 16 * wk + rnd.gauss(0, 1.2), 6.25 - 0.25 * wk, "BASE"
+            elif d.weekday() == 1:
+                km, pace, lbl = 8 + 3 * wk, 5.15 - 0.2 * wk + rnd.gauss(0, 0.08), rnd.choice(["THRESHOLD", "TEMPO", "VO2MAX"])
+            else:
+                km, pace, lbl = 7 + 3 * wk, 6.1 - 0.15 * wk + rnd.gauss(0, 0.1), "RECOVERY" if rnd.random() < .3 else "BASE"
+            hr = {"BASE": 142, "RECOVERY": 132, "TEMPO": 158, "THRESHOLD": 164, "VO2MAX": 168}[lbl] - 4 * wk
+            acts.append({"id": aid, "name": "Marathon: " + {"BASE": "Duurloop", "RECOVERY": "Herstelloop",
+                         "TEMPO": "Tempo", "THRESHOLD": "Drempel", "VO2MAX": "Intervallen"}[lbl] if d.weekday() != 6 else "Marathon: Lange duurloop",
+                         "type": "running", "start": f"{iso(d)}T{'09:30' if d.weekday() == 6 else '19:00'}",
+                         "durMin": round(km * pace, 1), "distKm": round(km, 2), "kcal": int(km * 70),
+                         "avgHr": int(hr + rnd.gauss(0, 3)), "maxHr": int(hr + 18), "load": round(km * 9, 1),
+                         "aeTE": 3.0, "anTE": 1.0, "teLabel": lbl, "plan": True,
+                         "vo2": round(49 + (cfg["activity_days"] - i) * 0.006 + rnd.gauss(0, 0.3), 1)})
+            aid += 1
+    acts.sort(key=lambda a: a["start"], reverse=True)
     return {"days": days, "activities": acts,
             "fitnessAge": {"fitnessAge": 24.5, "chronologicalAge": 29, "achievable": 22.0},
             "profile": {"vo2Run": 51.0}, "coverage": {"demo": "ok"}, "coreOk": True}
