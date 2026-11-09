@@ -1,0 +1,70 @@
+name: Garmin sync
+
+on:
+  schedule:
+    # UTC-tijden: 06:20, 12:20 en 21:20 in de winter (een uur later in de zomer)
+    - cron: "20 5,11,20 * * *"
+  workflow_dispatch:
+    inputs:
+      schema:
+        description: "Alleen de structuur van de Garmin-antwoorden tonen (geen waarden)"
+        type: boolean
+        default: false
+
+# Standaard niets; alleen deze job mag naar de repo schrijven (voor gh-pages).
+permissions: {}
+
+concurrency:
+  group: garmin-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      # Acties vastgepind op commit (niet op een verschuifbare tag)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Pakketten installeren (exacte versies, gecontroleerde hashes)
+        run: "pip install --require-hashes --only-binary=:all: -r requirements.txt"
+
+      - name: Vorige stand ophalen (versleuteld)
+        run: |
+          mkdir -p prev
+          if git fetch --depth 1 origin gh-pages 2>/dev/null; then
+            git --work-tree=prev checkout FETCH_HEAD -- . || true
+          fi
+
+      - name: Garmin-data ophalen en versleutelen
+        env:
+          GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
+          GARMIN_DASH_PASSPHRASE: ${{ secrets.GARMIN_DASH_PASSPHRASE }}
+          SCHEMA: ${{ inputs.schema }}
+        run: |
+          if [ "$SCHEMA" = "true" ]; then
+            python garmin_sync.py --ci --schema
+          else
+            python garmin_sync.py --ci --prev-dir prev --out-dir public
+          fi
+
+      - name: Publiceren naar gh-pages (zonder geschiedenis)
+        if: ${{ inputs.schema != true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd public
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "update"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
